@@ -25,7 +25,7 @@ async function storePDF(filePath) {
   console.log("Stored all vectors in Pinecone");
 }
 module.exports = { storePDF };
-async function test() {
-  await storePDF("./sample-pdfs/Circular LInked List.pdf");
-}
-test();
+// async function test() {
+//   await storePDF("./sample-pdfs/Circular LInked List.pdf");
+// }
+// test();

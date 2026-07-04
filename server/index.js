@@ -11,17 +11,20 @@ connectDB();
 // }
 // testCourse();
 
-const Course = require("./models/Course");
-const Document = require("./models/Document");
+// const Course = require("./models/Course");
+// const Document = require("./models/Document");
 
-async function testDoc() {
-  const c = await Course.create({ name: "Test Course" });
-  const d = await Document.create({ filename: "notes.pdf", course: c._id });
-  console.log("Created document:", d);
-}
-testDoc();
+// async function testDoc() {
+//   const c = await Course.create({ name: "Test Course" });
+//   const d = await Document.create({ filename: "notes.pdf", course: c._id });
+//   console.log("Created document:", d);
+// }
+// testDoc();
 
 const app = express();
+
+const uploadRoute = require("./routes/upload");
+app.use("/upload", uploadRoute);
 
 app.get('/', (req, res) => {
     res.send('CampusLens API is running');
