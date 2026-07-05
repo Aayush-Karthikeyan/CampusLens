@@ -8,7 +8,9 @@ const upload = multer({ dest: "uploads/" });
 router.post("/", upload.single("pdf"), async (req, res) => {
   try {
     const filePath = req.file.path;
-    await storePDF(filePath);
+    const { courseId } = req.body;
+    const sourceName = req.file.originalname;
+    await storePDF(filePath, courseId, sourceName);
     res.json({ message: "PDF processed and stored", file: req.file.originalname });
   } catch (error) {
     res.status(500).json({ error: error.message });

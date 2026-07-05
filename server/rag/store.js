@@ -5,7 +5,7 @@ const { chunkText } = require("./chunkText");
 const { embedText } = require("./embed");
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 const index = pc.index(process.env.PINECONE_INDEX);
-async function storePDF(filePath) {
+async function storePDF(filePath, courseId, sourceName) {
   const text = await extractText(filePath);
   const chunks = chunkText(text);
   const vectors = [];
@@ -14,7 +14,7 @@ async function storePDF(filePath) {
     vectors.push({
       id: `${filePath}-chunk-${i}`,
       values: embedding,
-      metadata: { text: chunks[i] },
+      metadata: { text: chunks[i], courseId: courseId, source: sourceName, chunkIndex: i },
     });
     console.log(`Embedded chunk ${i + 1}/${chunks.length}`);
   }
@@ -26,6 +26,6 @@ async function storePDF(filePath) {
 }
 module.exports = { storePDF };
 // async function test() {
-//   await storePDF("./sample-pdfs/Circular LInked List.pdf");
+//   await storePDF("./sample-pdfs/Circular LInked List.pdf", "cs101", "Circular LInked List.pdf");
 // }
 // test();
