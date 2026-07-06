@@ -1,0 +1,519 @@
+@import url("https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-night: #171009;
+  --color-cream: #E1D6CE;
+  --color-red: #C30D23;
+  --color-ice: #8FCFE0;
+
+  --font-display: "Bricolage Grotesque", sans-serif;
+  --font-body: "Switzer", sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-night text-cream font-body antialiased;
+  }
+}
+
+/* nav hover: label rolls up, its clone flips in from below */
+.nav-link {
+  display: inline-block;
+  overflow: hidden;
+  height: 1.4em;
+}
+
+.nav-link .nav-label {
+  display: block;
+  height: 1.4em;
+  line-height: 1.4em;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-link:hover .nav-label {
+  transform: translateY(-100%);
+}
+
+/* red intro: logo pops in on the red screen, then flies to its header slot
+   as the red fades out (background fades — not opacity, the logo must stay
+   visible mid-flight; the transform is measured and set inline from JS) */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  background-color: var(--color-red);
+  transition: background-color 500ms ease 300ms;
+}
+
+.intro-mark {
+  width: 4.5rem;
+  height: 4.5rem;
+  color: var(--color-night);
+  animation: intro-mark-in 500ms ease backwards;
+  transition: transform 900ms cubic-bezier(0.65, 0, 0.35, 1), color 900ms ease;
+  will-change: transform;
+}
+
+.intro-open {
+  background-color: transparent;
+  pointer-events: none;
+}
+
+.intro-open .intro-mark {
+  color: var(--color-ice);
+}
+
+.intro-open .intro-wordmark {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+@keyframes intro-mark-in {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+/* header slides down from the top as the intro opens */
+.site-header {
+  transition:
+    transform 750ms cubic-bezier(0.5, 0, 0.75, 0.4),
+    opacity 420ms ease;
+  will-change: transform;
+}
+
+.header-drop {
+  animation: header-drop 600ms cubic-bezier(0.16, 1, 0.3, 1) 1.4s backwards;
+}
+
+@keyframes header-drop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+/* header mark: periodic coin spin — twirl twice, settle, rest. The 4s delay
+   keeps it still until the intro flight has landed and swapped. */
+.logo-spin {
+  animation: coin-spin 15s ease-in-out 4s infinite;
+  transform-style: preserve-3d;
+}
+
+.header-out {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(100vh + 2rem)) rotate(2deg);
+}
+
+@keyframes coin-spin {
+  0%,
+  86% {
+    transform: perspective(600px) rotateY(0);
+  }
+  100% {
+    transform: perspective(600px) rotateY(720deg);
+  }
+}
+
+/* fixed corner elements: kicked off the page when the footer scrolls in */
+.corner-track {
+  opacity: 1;
+  transition:
+    transform 650ms cubic-bezier(0.5, 0, 0.75, 0.4),
+    opacity 420ms ease;
+}
+
+.corner-out {
+  opacity: 0;
+  transform: translateY(calc(100% + 6rem));
+}
+
+/* hero words: drop in from above and sharpen into focus, staggered (delays
+   sync with the intro timeline — red fade ends ~1.7s, logo lands ~1.8s) */
+.hero-enter {
+  animation: hero-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.hero-enter-1 {
+  animation-delay: 1.4s;
+}
+
+.hero-enter-2 {
+  animation-delay: 1.55s;
+}
+
+.hero-enter-3 {
+  animation-delay: 1.7s;
+}
+
+.hero-wordmark-text {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  padding: 0 0.04em 0.08em;
+  perspective: 900px;
+}
+
+.hero-wordmark-text::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(143, 207, 224, 0.72) 48%,
+    rgba(225, 214, 206, 0.95) 50%,
+    rgba(143, 207, 224, 0.72) 52%,
+    transparent 58%,
+    transparent 100%
+  );
+  mix-blend-mode: screen;
+  transform: translateX(-125%) skewX(-16deg);
+  animation: hero-wordmark-glint 850ms cubic-bezier(0.16, 1, 0.3, 1) 2.12s both;
+  pointer-events: none;
+}
+
+.hero-wordmark-letter {
+  display: inline-block;
+  transform-origin: 50% 70%;
+  animation: hero-letter-focus 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(1.72s + var(--letter-i) * 45ms);
+}
+
+@keyframes hero-enter {
+  from {
+    transform: translateY(-2.5rem);
+    opacity: 0;
+    filter: blur(12px);
+  }
+}
+
+@keyframes hero-letter-focus {
+  0% {
+    opacity: 0;
+    filter: blur(14px);
+    transform: translateY(0.5em) rotateX(-82deg) scaleY(0.62);
+  }
+  58% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(-0.04em) rotateX(10deg) scaleY(1.04);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) rotateX(0) scaleY(1);
+  }
+}
+
+@keyframes hero-wordmark-glint {
+  from {
+    opacity: 0;
+    transform: translateX(-125%) skewX(-16deg);
+  }
+  18% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(125%) skewX(-16deg);
+  }
+}
+
+/* corner elements arrive last, after the words have settled */
+.corner-enter {
+  animation: corner-enter 600ms ease backwards;
+}
+
+.corner-enter-1 {
+  animation-delay: 2.3s;
+}
+
+.corner-enter-2 {
+  animation-delay: 2.45s;
+}
+
+@keyframes corner-enter {
+  from {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+}
+
+/* story stage: one pinned scroll sequence (--story-p 0..1 set from JS).
+   Phases: hero words fade + photo clips down to a centered portrait panel
+   (p 0-.25), blank beat (.25-.32), then chapters 01/02/03 fade in around
+   the pinned panel (.32-1). Scroll position drives everything, so it
+   reverses cleanly. */
+.hero-stage {
+  height: 700vh;
+  background: var(--color-cream);
+}
+
+.hero-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.hero-photo-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(23, 16, 9, 0.55), rgba(23, 16, 9, 0.1) 40%, rgba(23, 16, 9, 0.25)),
+    url("./assets/hero.jpg") 50% 62% / cover no-repeat,
+    var(--color-night);
+  /* saturates at p=0.2: full-bleed -> centered ~28vw x 76vh portrait window */
+  --shrink: clamp(0, calc(var(--story-p, 0) * 5), 1);
+  clip-path: inset(calc(var(--shrink) * 12%) calc(var(--shrink) * 36%));
+}
+
+.hero-content {
+  opacity: clamp(0, calc(1 - 5 * var(--story-p, 0)), 1);
+}
+
+/* chapter overlays: invisible until the scroll handler marks one active */
+.chapter {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition: opacity 500ms ease, transform 500ms ease;
+  pointer-events: none;
+}
+
+.chapter-active {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* starts hidden; IntersectionObserver adds .visible when scrolled into view */
+.reveal {
+  opacity: 0;
+  transform: translateX(2.5rem);
+  transition: opacity 600ms ease, transform 600ms ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* mint-style CTA: fully-visible triangles pulse in sequence, no clipping */
+.mint-arrows {
+  display: inline-flex;
+  gap: 0.15em;
+}
+
+.mint-arrow {
+  display: inline-block;
+  animation: mint-pulse 1.2s ease-in-out infinite;
+}
+
+.mint-arrow:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.mint-arrow:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes mint-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.footer-stage {
+  isolation: isolate;
+}
+
+.footer-physics {
+  cursor: grab;
+  touch-action: none;
+}
+
+.footer-physics:active {
+  cursor: grabbing;
+}
+
+.footer-logo-token {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  transform-origin: center;
+  user-select: none;
+  will-change: transform;
+  filter: drop-shadow(0 1.1rem 0.8rem rgba(0, 0, 0, 0.55));
+}
+
+.footer-token-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform: perspective(900px) rotateX(8deg) rotateY(-3deg);
+  transform-style: preserve-3d;
+}
+
+.footer-token-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: var(--color-red);
+}
+
+.footer-token-cl {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-cream);
+  font-family: var(--font-display);
+  font-size: calc(var(--token-size, 140px) * 0.15);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  text-shadow: 0 0.08em 0 rgba(23, 16, 9, 0.5);
+  transform: translateX(-50%) rotate(-1deg);
+}
+
+.footer-flip {
+  color: var(--color-cream);
+}
+
+.footer-icon-link {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid rgba(225, 214, 206, 0.18);
+  border-radius: 9999px;
+}
+
+.footer-icon-link .nav-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  line-height: 2.75rem;
+}
+
+.footer-icon-link svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+@media (max-width: 640px) {
+  .footer-icon-link {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .footer-icon-link .nav-label {
+    height: 2.35rem;
+    line-height: 2.35rem;
+  }
+
+  .footer-icon-link svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .intro-overlay {
+    display: none;
+  }
+  .logo-spin {
+    animation: none;
+  }
+  .corner-track {
+    transition: none;
+  }
+  .corner-out {
+    transform: none;
+  }
+  .header-drop {
+    animation: none;
+  }
+  .site-header {
+    transition: none;
+  }
+  .header-out {
+    opacity: 0;
+    transform: none;
+  }
+  .nav-link .nav-label {
+    transition: none;
+  }
+  .hero-stage {
+    height: auto;
+  }
+  .hero-sticky {
+    position: relative;
+    height: auto;
+    overflow: visible;
+  }
+  .hero-photo-layer {
+    position: static;
+    height: 100vh;
+    clip-path: none;
+  }
+  .hero-content {
+    opacity: 1;
+  }
+  .chapter {
+    position: static;
+    opacity: 1;
+    transform: none;
+    min-height: 100vh;
+    pointer-events: auto;
+    transition: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .mint-arrow {
+    animation: none;
+    opacity: 1;
+  }
+  .footer-physics {
+    pointer-events: none;
+  }
+  .hero-enter,
+  .corner-enter {
+    animation: none;
+  }
+  .hero-wordmark-letter,
+  .hero-wordmark-text::after {
+    animation: none;
+  }
+  .hero-wordmark-text {
+    overflow: visible;
+  }
+}
