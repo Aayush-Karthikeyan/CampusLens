@@ -96,7 +96,7 @@ export function SocialBar({ enter = false }) {
   return (
     <div
       data-corner
-      className="corner-track fixed inset-x-0 bottom-4 z-40 mix-blend-difference md:bottom-5"
+      className="corner-track fixed left-0 bottom-4 z-40 mix-blend-difference md:bottom-5"
     >
       <div className={(enter ? "corner-enter corner-enter-1 " : "") + "flex items-center gap-8 px-4 md:px-5"}>
         <FlipSocial href="#">(LI)</FlipSocial>

@@ -12,6 +12,10 @@ app.use("/upload", uploadRoute);
 const chatRoute = require("./routes/chat");
 app.use("/chat", chatRoute);
 
+const coursesRoute = require("./routes/courses");
+app.use("/courses", coursesRoute);
+
+
 app.get('/', (req, res) => {
     res.send('CampusLens API is running');
 });
