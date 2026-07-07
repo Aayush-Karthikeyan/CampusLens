@@ -436,6 +436,148 @@
   height: 1.15rem;
 }
 
+.assistant-markdown {
+  max-width: 46rem;
+  color: var(--color-cream);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.assistant-markdown > * + * {
+  margin-top: 1rem;
+}
+
+.assistant-markdown h2,
+.assistant-markdown h3,
+.assistant-markdown h4 {
+  margin-top: 1.35rem;
+  color: var(--color-cream);
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.assistant-markdown h2 {
+  font-size: 1.85rem;
+}
+
+.assistant-markdown h3 {
+  font-size: 1.45rem;
+}
+
+.assistant-markdown h4 {
+  font-size: 1.2rem;
+}
+
+.assistant-markdown p {
+  color: rgba(225, 214, 206, 0.94);
+}
+
+.assistant-markdown strong {
+  color: var(--color-cream);
+  font-weight: 700;
+}
+
+.assistant-markdown em {
+  color: rgba(225, 214, 206, 0.82);
+}
+
+.assistant-markdown ul,
+.assistant-markdown ol {
+  display: grid;
+  gap: 0.55rem;
+  padding-left: 1.35rem;
+  color: rgba(225, 214, 206, 0.94);
+}
+
+.assistant-markdown ul {
+  list-style: disc;
+}
+
+.assistant-markdown ol {
+  list-style: decimal;
+}
+
+.assistant-markdown li::marker {
+  color: var(--color-ice);
+  font-weight: 700;
+}
+
+.assistant-markdown blockquote {
+  border-left: 2px solid var(--color-ice);
+  background: rgba(225, 214, 206, 0.05);
+  padding: 0.85rem 1rem;
+  color: rgba(225, 214, 206, 0.78);
+}
+
+.assistant-markdown code {
+  border: 1px solid rgba(225, 214, 206, 0.14);
+  background: rgba(225, 214, 206, 0.08);
+  padding: 0.1rem 0.32rem;
+  color: var(--color-ice);
+  font-size: 0.9em;
+}
+
+.assistant-markdown pre {
+  overflow-x: auto;
+  border: 1px solid rgba(225, 214, 206, 0.12);
+  background: rgba(225, 214, 206, 0.06);
+  padding: 1rem;
+}
+
+.assistant-markdown pre code {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--color-cream);
+}
+
+.assistant-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  font-size: 0.95rem;
+}
+
+.assistant-markdown th,
+.assistant-markdown td {
+  border: 1px solid rgba(225, 214, 206, 0.14);
+  padding: 0.65rem 0.8rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.assistant-markdown th {
+  background: rgba(143, 207, 224, 0.12);
+  color: var(--color-ice);
+  font-weight: 700;
+}
+
+.assistant-markdown .katex {
+  color: var(--color-cream);
+  font-size: 1.05em;
+}
+
+.assistant-markdown .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid rgba(143, 207, 224, 0.18);
+  background: rgba(143, 207, 224, 0.06);
+  margin: 1rem 0;
+  padding: 1rem;
+}
+
+.assistant-markdown p:has(strong:first-child:last-child),
+.assistant-markdown p:has(strong:first-child) {
+  max-width: max-content;
+}
+
+.assistant-markdown p:has(strong:first-child) {
+  border-left: 2px solid var(--color-red);
+  background: rgba(195, 13, 35, 0.08);
+  padding: 0.75rem 1rem;
+}
+
 @media (max-width: 640px) {
   .footer-icon-link {
     width: 2.35rem;

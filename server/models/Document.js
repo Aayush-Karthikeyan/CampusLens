@@ -14,6 +14,10 @@ const documentSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  vectorMetadataVersion: {
+    type: Number,
+    default: 1,
+  },
 });
 
 module.exports = mongoose.model("Document", documentSchema);

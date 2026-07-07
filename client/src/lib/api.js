@@ -28,8 +28,18 @@ export function createCourse(name) {
   });
 }
 
+export function deleteCourse(courseId) {
+  return request(`/api/courses/${courseId}`, { method: "DELETE" });
+}
+
 export function listDocuments(courseId) {
   return request(`/api/courses/${courseId}/documents`);
+}
+
+export function deleteDocument(courseId, documentId) {
+  return request(`/api/courses/${courseId}/documents/${documentId}`, {
+    method: "DELETE",
+  });
 }
 
 export function uploadPdf(courseId, file) {
@@ -39,10 +49,26 @@ export function uploadPdf(courseId, file) {
   return request("/api/upload", { method: "POST", body: form });
 }
 
-export function sendChat(courseId, question) {
+export function listChatSessions(courseId) {
+  return request(`/api/chat/sessions?courseId=${encodeURIComponent(courseId)}`);
+}
+
+export function createChatSession(courseId, title = "New chat") {
+  return request("/api/chat/sessions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ courseId, title }),
+  });
+}
+
+export function deleteChatSession(sessionId) {
+  return request(`/api/chat/sessions/${sessionId}`, { method: "DELETE" });
+}
+
+export function sendChat(courseId, question, sessionId = null) {
   return request("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ courseId, question }),
+    body: JSON.stringify({ courseId, question, sessionId }),
   });
 }

@@ -4,17 +4,17 @@ const { embedText } = require("./embed");
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 const index = pc.index(process.env.PINECONE_INDEX);
 
-async function query(question, courseId) {
+async function query(question, courseId, topK = 6) {
   const questionVector = await embedText(question);
 
   const results = await index.query({
     vector: questionVector,
-    topK: 3,
+    topK,
     includeMetadata: true,
     filter: { courseId: courseId },
   });
 
-  return results.matches;
+  return results.matches || [];
 }
 
 module.exports = { query };
