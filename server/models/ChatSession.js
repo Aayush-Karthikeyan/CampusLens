@@ -55,7 +55,6 @@ const chatSessionSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       default: nextExpiry,
-      index: true,
     },
   },
   { timestamps: true }

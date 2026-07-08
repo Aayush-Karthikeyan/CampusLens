@@ -4,7 +4,9 @@ const ChatSession = require("../models/ChatSession");
 const { query } = require("../rag/query");
 const { buildPrompt, generateAnswer } = require("../rag/generate");
 
-const SOURCE_SCORE_THRESHOLD = Number(process.env.SOURCE_SCORE_THRESHOLD || 0.7);
+// Empirically measured on real course data: on-topic questions score ~0.63-0.70,
+// off-topic questions score ~0.45-0.49. 0.55 sits in the gap between them.
+const SOURCE_SCORE_THRESHOLD = Number(process.env.SOURCE_SCORE_THRESHOLD || 0.55);
 
 function parseErrorPayload(error) {
   if (!error?.message) return null;
