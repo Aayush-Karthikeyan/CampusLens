@@ -72,3 +72,11 @@ export function sendChat(courseId, question, sessionId = null) {
     body: JSON.stringify({ courseId, question, sessionId }),
   });
 }
+
+export function generateQuiz(courseId, count = 5) {
+  return request("/api/quiz", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ courseId, count }),
+  });
+}
