@@ -148,7 +148,24 @@ function Chat() {
       setSending(true);
       putSessionFirst(optimisticSession);
 
-      const { session: savedSession } = await sendChat(courseId, q, session._id);
+      // stream: update the pending assistant bubble as each chunk arrives,
+      // then swap in the saved session (with sources) when the stream ends.
+      let streamed = "";
+      const { session: savedSession } = await sendChat(
+        courseId,
+        q,
+        session._id,
+        (chunk) => {
+          streamed += chunk;
+          putSessionFirst({
+            ...optimisticSession,
+            messages: [
+              ...optimisticSession.messages.slice(0, -1),
+              { role: "assistant", pending: true, text: streamed },
+            ],
+          });
+        }
+      );
       putSessionFirst(savedSession);
     } catch (err) {
       if (optimisticSession) {
@@ -335,12 +352,15 @@ function AssistantMessage({ msg }) {
         campuslens
       </div>
 
-      {msg.pending ? (
+      {msg.pending && !msg.text ? (
         <div className="flex gap-1.5" aria-label="Thinking">
           <span className="thinking-dot h-2 w-2 rounded-full bg-cream/50" />
           <span className="thinking-dot h-2 w-2 rounded-full bg-cream/50" />
           <span className="thinking-dot h-2 w-2 rounded-full bg-cream/50" />
         </div>
+      ) : msg.pending ? (
+        // streaming: render the partial answer as it arrives
+        <MarkdownMessage text={msg.text} />
       ) : msg.error ? (
         <p className="border border-red/40 bg-red/10 px-4 py-3 leading-relaxed text-red">
           {msg.error}

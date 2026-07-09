@@ -52,7 +52,7 @@ Rules for every question:
 - "correctIndex" is the 0-based position of the correct option (0, 1, 2, or 3).
 - Vary the position of the correct answer across questions — do not always make it option 0.
 - Wrong options must be plausible and related to the topic (e.g. the result of a common mistake), not obviously silly.
-- "explanation" shows why the correct answer is right, including the working for numeric questions.
+- "explanation" is CONCISE: at most 2-3 sentences. For numeric questions show only the key formula and the final substitution, not a full derivation. (Long explanations make the quiz painfully slow to generate.)
 - "source" is the filename the concept was drawn from (shown in brackets above).
 - Only test concepts the excerpts actually support. If there isn't enough material for ${count} good questions, write fewer.
 
@@ -60,7 +60,8 @@ Note excerpts:
 ${context}`;
 }
 
-async function generateQuiz(matches, count) {
+// One Gemini call for a batch of questions.
+async function generateBatch(matches, count) {
   const prompt = buildQuizPrompt(matches, count);
 
   const response = await ai.models.generateContent({
@@ -72,6 +73,9 @@ async function generateQuiz(matches, count) {
       // Higher temperature so regenerating a quiz for the same course gives
       // genuinely different questions instead of the same set every time.
       temperature: 1.0,
+      // Bounded thinking: enough to double-check arithmetic on generated
+      // numbers (measured ~840 tokens used), without unbounded latency.
+      thinkingConfig: { thinkingBudget: 1024 },
     },
   });
 
@@ -81,10 +85,37 @@ async function generateQuiz(matches, count) {
   } catch {
     throw new Error("The AI returned a quiz we couldn't read. Please try again.");
   }
+  return Array.isArray(questions) ? questions : [];
+}
+
+// Generation latency is proportional to output tokens (measured: 5 questions in
+// one call ≈ 11k tokens ≈ 47s). Splitting into parallel batches makes wall-clock
+// time ≈ one small batch instead of the sum. Each batch gets its own slice of
+// the retrieved chunks, which also reduces duplicate questions across batches.
+const BATCH_SIZE = 2;
+
+async function generateQuiz(matches, count) {
+  const batchCount = Math.ceil(count / BATCH_SIZE);
+
+  // Round-robin the chunks across batches so each call sees different material.
+  const slices = Array.from({ length: batchCount }, () => []);
+  matches.forEach((match, i) => slices[i % batchCount].push(match));
+
+  const sizes = Array.from({ length: batchCount }, (_, i) =>
+    Math.min(BATCH_SIZE, count - i * BATCH_SIZE)
+  );
+
+  const batches = await Promise.all(
+    sizes.map((size, i) =>
+      // A batch with no chunks can't write grounded questions — skip it.
+      slices[i].length > 0 ? generateBatch(slices[i], size) : []
+    )
+  );
+  const questions = batches.flat();
 
   // Defensive: only keep well-formed questions, and clamp correctIndex into range
   // so a bad model response can never crash the frontend.
-  return (Array.isArray(questions) ? questions : [])
+  return questions
     .filter(
       (q) =>
         q &&

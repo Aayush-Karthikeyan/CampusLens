@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { query } = require("../rag/query");
 const { generateQuiz, QUIZ_RETRIEVAL_SEED } = require("../rag/quiz");
+const { normalizeGeminiError } = require("../lib/geminiError");
 
 const MIN_QUESTIONS = 1;
 const MAX_QUESTIONS = 15;
@@ -38,7 +39,11 @@ router.post("/", async (req, res) => {
 
     res.json({ questions });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const normalized = normalizeGeminiError(
+      error,
+      "Couldn't build the quiz. Please try again."
+    );
+    res.status(normalized.statusCode).json({ error: normalized.message });
   }
 });
 

@@ -65,12 +65,59 @@ export function deleteChatSession(sessionId) {
   return request(`/api/chat/sessions/${sessionId}`, { method: "DELETE" });
 }
 
-export function sendChat(courseId, question, sessionId = null) {
-  return request("/api/chat", {
+// The chat endpoint streams over Server-Sent Events. onChunk fires with each
+// text fragment as the model produces it; the returned promise resolves with
+// the final {answer, sources, session} payload once the stream completes.
+export async function sendChat(courseId, question, sessionId = null, onChunk) {
+  const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ courseId, question, sessionId }),
   });
+
+  // errors before the stream starts (400s, quota) arrive as plain JSON
+  if (!res.ok || !res.headers.get("content-type")?.includes("text/event-stream")) {
+    let body = null;
+    try {
+      body = await res.json();
+    } catch {
+      // non-JSON error body
+    }
+    throw new Error((body && body.error) || res.statusText);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result = null;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split("\n\n");
+    buffer = events.pop(); // keep any incomplete trailing event
+
+    for (const event of events) {
+      const dataLine = event.split("\n").find((l) => l.startsWith("data: "));
+      if (!dataLine) continue;
+
+      const payload = JSON.parse(dataLine.slice(6));
+      if (payload.type === "chunk") {
+        onChunk?.(payload.text);
+      } else if (payload.type === "done") {
+        result = payload;
+      } else if (payload.type === "error") {
+        throw new Error(payload.message);
+      }
+    }
+  }
+
+  if (!result) {
+    throw new Error("The connection dropped before the answer finished.");
+  }
+  return result;
 }
 
 export function generateQuiz(courseId, count = 5) {

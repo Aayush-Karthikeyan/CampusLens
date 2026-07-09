@@ -2,63 +2,18 @@ const express = require("express");
 const router = express.Router();
 const ChatSession = require("../models/ChatSession");
 const { query } = require("../rag/query");
-const { buildPrompt, generateAnswer } = require("../rag/generate");
+const { buildPrompt, generateAnswerStream } = require("../rag/generate");
+const { normalizeGeminiError } = require("../lib/geminiError");
 
 // Empirically measured on real course data: on-topic questions score ~0.63-0.70,
 // off-topic questions score ~0.45-0.49. 0.55 sits in the gap between them.
 const SOURCE_SCORE_THRESHOLD = Number(process.env.SOURCE_SCORE_THRESHOLD || 0.55);
 
-function parseErrorPayload(error) {
-  if (!error?.message) return null;
-
-  try {
-    return JSON.parse(error.message);
-  } catch {
-    return null;
-  }
-}
-
-function formatRetryDelay(seconds) {
-  if (!Number.isFinite(seconds) || seconds <= 0) return "in a little while";
-  if (seconds < 60) return `in about ${Math.ceil(seconds)} seconds`;
-
-  const minutes = Math.ceil(seconds / 60);
-  if (minutes === 1) return "in about 1 minute";
-  return `in about ${minutes} minutes`;
-}
-
-function getRetryDelaySeconds(payload) {
-  const retryInfo = payload?.error?.details?.find((detail) =>
-    detail?.["@type"]?.includes("RetryInfo")
-  );
-  const rawDelay = retryInfo?.retryDelay;
-  if (!rawDelay) return null;
-
-  const seconds = Number(String(rawDelay).replace("s", ""));
-  return Number.isFinite(seconds) ? seconds : null;
-}
-
 function normalizeChatError(error) {
-  const payload = parseErrorPayload(error);
-  const status = payload?.error?.status || "";
-  const message = payload?.error?.message || error.message || "";
-  const quotaLike =
-    status === "RESOURCE_EXHAUSTED" ||
-    message.toLowerCase().includes("quota") ||
-    message.includes("429");
-
-  if (!quotaLike) {
-    return {
-      statusCode: 500,
-      message: "CampusLens hit a problem answering that. Please try again.",
-    };
-  }
-
-  const retryDelay = formatRetryDelay(getRetryDelaySeconds(payload));
-  return {
-    statusCode: 429,
-    message: `CampusLens has hit the AI request limit for now. Google says to try again ${retryDelay}. If it still does not work after that, the daily free quota may need longer to reset.`,
-  };
+  return normalizeGeminiError(
+    error,
+    "CampusLens hit a problem answering that. Please try again."
+  );
 }
 
 function makeTitle(question) {
@@ -143,14 +98,22 @@ router.delete("/sessions/:id", async (req, res) => {
   }
 });
 
+// Streams the answer over Server-Sent Events so the browser renders words as
+// Gemini produces them (~1s to first text) instead of waiting ~8-10s for the
+// full answer. Events: {type:"chunk"} repeatedly, then one {type:"done"} with
+// the sources + saved session. Errors before streaming starts are normal HTTP
+// errors; errors mid-stream become a {type:"error"} event because the 200
+// status has already been sent.
 router.post("/", async (req, res) => {
+  let session;
+  let matches;
   try {
     const { courseId, question, sessionId } = req.body;
     if (!courseId || !question?.trim()) {
       return res.status(400).json({ error: "courseId and question are required" });
     }
 
-    let session = sessionId
+    session = sessionId
       ? await ChatSession.findOne({ _id: sessionId, course: courseId })
       : null;
 
@@ -162,10 +125,29 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const matches = await query(question, courseId);
-    const prompt = buildPrompt(matches, question);
-    const answer = await generateAnswer(prompt);
-    const sources = formatSources(matches);
+    matches = await query(question, courseId);
+  } catch (error) {
+    const normalized = normalizeChatError(error);
+    return res.status(normalized.statusCode).json({ error: normalized.message });
+  }
+
+  const { question } = req.body;
+  const prompt = buildPrompt(matches, question);
+  const sources = formatSources(matches);
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const send = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`);
+
+  try {
+    let answer = "";
+    for await (const chunk of generateAnswerStream(prompt)) {
+      answer += chunk;
+      send({ type: "chunk", text: chunk });
+    }
 
     if (session.title === "New chat" && session.messages.length === 0) {
       session.title = makeTitle(question);
@@ -176,9 +158,12 @@ router.post("/", async (req, res) => {
     session.refreshExpiry();
     await session.save();
 
-    res.json({ answer, sources, session });
+    send({ type: "done", answer, sources, session });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const normalized = normalizeChatError(error);
+    send({ type: "error", message: normalized.message });
+  } finally {
+    res.end();
   }
 });
 
