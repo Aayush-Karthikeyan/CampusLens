@@ -3,6 +3,7 @@ const router = express.Router();
 const Course = require("../models/Course");
 const Document = require("../models/Document");
 const ChatSession = require("../models/ChatSession");
+const StudyPlan = require("../models/StudyPlan");
 const {
   deleteCourseVectors,
   deleteDocumentVectors,
@@ -67,6 +68,7 @@ router.delete("/:id", async (req, res) => {
     await deleteCourseVectors(req.params.id);
     await Document.deleteMany({ course: req.params.id });
     await ChatSession.deleteMany({ course: req.params.id });
+    await StudyPlan.deleteMany({ course: req.params.id });
     await Course.findByIdAndDelete(req.params.id);
 
     res.json({ message: "Course deleted" });

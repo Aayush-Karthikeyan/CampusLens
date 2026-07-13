@@ -127,3 +127,26 @@ export function generateQuiz(courseId, count = 5) {
     body: JSON.stringify({ courseId, count }),
   });
 }
+
+// Returns the course's saved plan, or null if there isn't one yet.
+export function getStudyPlan(courseId) {
+  return request(`/api/study-plan?courseId=${encodeURIComponent(courseId)}`);
+}
+
+// Generates and saves a plan, overwriting any existing one for the course.
+export function generateStudyPlan(courseId, examDate, focus = "") {
+  return request("/api/study-plan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ courseId, examDate, focus }),
+  });
+}
+
+// Ticks a single task on/off; returns the updated plan.
+export function toggleStudyTask(courseId, day, taskIndex, done) {
+  return request("/api/study-plan/task", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ courseId, day, taskIndex, done }),
+  });
+}

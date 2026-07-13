@@ -18,6 +18,9 @@ app.use("/courses", coursesRoute);
 const quizRoute = require("./routes/quiz");
 app.use("/quiz", quizRoute);
 
+const studyPlanRoute = require("./routes/study-plan");
+app.use("/study-plan", studyPlanRoute);
+
 
 app.get('/', (req, res) => {
     res.send('CampusLens API is running');
