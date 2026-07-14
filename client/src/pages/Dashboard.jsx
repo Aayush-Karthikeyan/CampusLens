@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FiBookOpen,
@@ -51,6 +51,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState(null);
+  const [courseNameHint, setCourseNameHint] = useState("");
+  const courseInputRef = useRef(null);
 
   const totalDocuments = useMemo(
     () =>
@@ -100,10 +102,15 @@ function Dashboard() {
   async function handleCreateCourse(e) {
     e.preventDefault();
     const name = newCourseName.trim();
-    if (!name) return;
+    if (!name) {
+      setCourseNameHint("Name the course first.");
+      courseInputRef.current?.focus();
+      return;
+    }
 
     setCreating(true);
     setError(null);
+    setCourseNameHint("");
     try {
       const course = await createCourse(name);
       setCourses((prev) => [course, ...prev]);
@@ -152,20 +159,28 @@ function Dashboard() {
             <div className="mt-4 flex gap-3">
               <input
                 id="dashboard-course-name"
+                ref={courseInputRef}
                 value={newCourseName}
-                onChange={(e) => setNewCourseName(e.target.value)}
+                onChange={(e) => {
+                  setNewCourseName(e.target.value);
+                  if (courseNameHint) setCourseNameHint("");
+                }}
                 placeholder="e.g. ENGG 319"
                 className="min-w-0 flex-1 border border-cream/15 bg-night px-4 py-3 text-sm text-cream placeholder:text-cream/35 focus:border-ice focus:outline-none"
               />
               <button
                 type="submit"
-                disabled={creating || !newCourseName.trim()}
-                className="flex h-12 w-12 shrink-0 items-center justify-center border border-ice text-ice transition-colors hover:bg-ice hover:text-night disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={creating}
+                className="flex h-12 shrink-0 items-center justify-center gap-2 border border-ice px-4 text-sm font-medium uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night disabled:cursor-wait disabled:opacity-50"
                 aria-label="Create course"
               >
                 <FiPlus aria-hidden="true" />
+                <span>{creating ? "Adding" : "Add"}</span>
               </button>
             </div>
+            {courseNameHint && (
+              <p className="mt-2 text-sm text-red">{courseNameHint}</p>
+            )}
             <p className="mt-3 text-sm text-cream/45">
               Create it here, then upload PDFs from any tool page.
             </p>
