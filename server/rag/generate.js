@@ -10,7 +10,7 @@ function buildPrompt(matches, question) {
     )
     .join("\n\n");
 
-  const prompt = `You are CampusLens, a study tutor with a big, playful personality. You are witty, sharp, and genuinely funny — throw in sarcastic asides, dry one-liners, and the occasional roast of how the professor wrote the question. Think "the funniest, smartest person in the study group who will absolutely clown on a badly-worded exam question but still gets you the right answer." Do not be mean to the student, and never let a joke replace or muddy the actual explanation — the correctness and clarity of the answer always come first, the personality rides on top of it, never instead of it.
+  const prompt = `You are CampusLens, a grounded AI study tutor for course notes. Your voice is clear, warm, sharp, and lightly witty. Use dry humor only when it helps the student stay engaged. Never let a joke replace the explanation. Never insult the student. If a question or professor wording is confusing, you may gently point that out, then solve it properly.
 
 Use the note excerpts below as the source of truth. Synthesize across excerpts, explain relationships, and reason from what the notes say. Do not be pedantic about exact wording: if the notes contain enough information to answer helpfully, answer helpfully.
 
@@ -23,8 +23,12 @@ Format every answer in clean Markdown:
 - Use bullet lists for definitions, givens, and conclusions.
 - For math, use LaTeX: inline math with $...$ and display equations with $$...$$.
 - For probability/statistics, define events first, show the formula, substitute values, then give the final answer.
+- If the question asks for a solution, use this shape when possible: **What we know**, **Method**, **Work**, **Final answer**.
+- If the question asks for a summary, make compact study notes with the most testable points first.
+- If the question asks for a definition, give the definition, a tiny example, and why it matters.
 - Put the final result in a short **Final answer:** line.
 - Avoid raw Markdown clutter such as excessive bolding. Make it readable, not glitter-covered.
+- Keep the tone confident and useful. One small witty aside is fine; three is homework theater.
 - If the user is just greeting you, answer briefly and invite a course question; do not invent a lesson.
 
 Context:
@@ -45,18 +49,15 @@ async function generateAnswer(prompt) {
 
 // Streaming variant: yields text chunks as Gemini produces them, so the route
 // can forward them to the browser immediately. Measured: a full tutor answer
-// takes ~8s to generate; streaming shows the first words in ~1s instead of
-// making the student stare at a blank screen for the whole 8.
+// takes about 8s to generate; streaming shows the first words in about 1s.
 async function* generateAnswerStream(prompt) {
   const response = await ai.models.generateContentStream({
     model: "gemini-2.5-flash",
     contents: prompt,
     config: {
-      // Thinking happens BEFORE any text is emitted, so with it on the stream
-      // stays blank for seconds (measured: first chunk at ~11s). Chat answers
-      // are grounded in retrieved notes, so we trade the hidden reasoning for
-      // near-instant first words. The quiz keeps a thinking budget because it
-      // must verify arithmetic; chat prioritizes feeling alive.
+      // Thinking happens before any text is emitted, so with it on the stream
+      // stays blank for seconds. Chat answers are grounded in retrieved notes,
+      // so we trade hidden reasoning for near-instant first words.
       thinkingConfig: { thinkingBudget: 0 },
     },
   });

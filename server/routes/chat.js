@@ -8,6 +8,9 @@ const { normalizeGeminiError } = require("../lib/geminiError");
 // Empirically measured on real course data: on-topic questions score ~0.63-0.70,
 // off-topic questions score ~0.45-0.49. 0.55 sits in the gap between them.
 const SOURCE_SCORE_THRESHOLD = Number(process.env.SOURCE_SCORE_THRESHOLD || 0.55);
+const MIN_CONTEXT_SCORE = Number(
+  process.env.MIN_CONTEXT_SCORE || SOURCE_SCORE_THRESHOLD
+);
 
 function normalizeChatError(error) {
   return normalizeGeminiError(
@@ -32,6 +35,53 @@ function formatSources(matches) {
       text: match.metadata.text,
       score: match.score,
     }));
+}
+
+function getLocalAnswer(question) {
+  const clean = question.trim().toLowerCase().replace(/[^\w\s']/g, "");
+  const compact = clean.replace(/\s+/g, " ");
+
+  if (
+    /^(hi|hey|hello|yo|sup|wassup|what's up|whats up|good morning|good afternoon|good evening)$/.test(
+      compact
+    )
+  ) {
+    return "Hey, I'm here. Pick a PDF-shaped problem and let's make it less rude.";
+  }
+
+  if (/^(thanks|thank you|thx|ty|appreciate it|thanks bro|thanks man)$/.test(compact)) {
+    return "Anytime. Academic suffering loves company, apparently.";
+  }
+
+  if (/^(bye|goodbye|see you|cya|later)$/.test(compact)) {
+    return "Later. May your notes be searchable and your professors unusually merciful.";
+  }
+
+  return null;
+}
+
+function getWeakContextAnswer(matches) {
+  const list = Array.isArray(matches) ? matches : [];
+  const bestScore = Number(list[0]?.score || 0);
+  if (list.length > 0 && bestScore >= MIN_CONTEXT_SCORE) return null;
+
+  return [
+    "I don't see enough support for that in your uploaded notes yet.",
+    "",
+    "Try asking it with a phrase from the PDF, or upload the document that covers it. I can freestyle many things, but pretending your notes said something they did not is how study tools become decorative nonsense.",
+  ].join("\n");
+}
+
+async function saveAnswer(session, question, answer, sources = []) {
+  if (session.title === "New chat" && session.messages.length === 0) {
+    session.title = makeTitle(question);
+  }
+
+  session.messages.push({ role: "user", text: question.trim() });
+  session.messages.push({ role: "assistant", text: answer, sources });
+  session.refreshExpiry();
+  await session.save();
+  return session;
 }
 
 router.get("/sessions", async (req, res) => {
@@ -107,6 +157,7 @@ router.delete("/sessions/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   let session;
   let matches;
+  let answerOverride = null;
   try {
     const { courseId, question, sessionId } = req.body;
     if (!courseId || !question?.trim()) {
@@ -125,14 +176,16 @@ router.post("/", async (req, res) => {
       });
     }
 
-    matches = await query(question, courseId);
+    answerOverride = getLocalAnswer(question);
+    matches = answerOverride ? [] : await query(question, courseId);
   } catch (error) {
     const normalized = normalizeChatError(error);
     return res.status(normalized.statusCode).json({ error: normalized.message });
   }
 
   const { question } = req.body;
-  const prompt = buildPrompt(matches, question);
+  const guardedAnswer = answerOverride || getWeakContextAnswer(matches);
+  const prompt = guardedAnswer ? null : buildPrompt(matches, question);
   const sources = formatSources(matches);
 
   res.setHeader("Content-Type", "text/event-stream");
@@ -144,19 +197,17 @@ router.post("/", async (req, res) => {
 
   try {
     let answer = "";
-    for await (const chunk of generateAnswerStream(prompt)) {
-      answer += chunk;
-      send({ type: "chunk", text: chunk });
+    if (guardedAnswer) {
+      answer = guardedAnswer;
+      send({ type: "chunk", text: answer });
+    } else {
+      for await (const chunk of generateAnswerStream(prompt)) {
+        answer += chunk;
+        send({ type: "chunk", text: chunk });
+      }
     }
 
-    if (session.title === "New chat" && session.messages.length === 0) {
-      session.title = makeTitle(question);
-    }
-
-    session.messages.push({ role: "user", text: question.trim() });
-    session.messages.push({ role: "assistant", text: answer, sources });
-    session.refreshExpiry();
-    await session.save();
+    await saveAnswer(session, question, answer, sources);
 
     send({ type: "done", answer, sources, session });
   } catch (error) {
