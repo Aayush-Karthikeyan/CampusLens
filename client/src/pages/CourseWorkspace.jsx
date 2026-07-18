@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useSearchParams } from "react-router-dom";
 import { Logomark, SiteHeader } from "../components/SiteChrome";
+import { ActionButton, Field, Kicker } from "../components/ui";
 import {
   createCourse,
   deleteCourse,
@@ -143,9 +144,7 @@ function CourseWorkspace() {
         {/* shared course + document rail */}
         <aside className="flex w-72 shrink-0 flex-col overflow-y-auto border-r border-cream/10 px-6 py-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-medium uppercase tracking-[0.2em] text-red">
-              Courses
-            </h2>
+            <Kicker as="h2">Courses</Kicker>
             <button
               onClick={() => setCreating((v) => !v)}
               className="text-sm text-ice transition-opacity hover:opacity-70"
@@ -156,12 +155,12 @@ function CourseWorkspace() {
 
           {creating && (
             <form onSubmit={handleCreateCourse} className="mt-4">
-              <input
+              <Field
                 autoFocus
                 value={newCourseName}
                 onChange={(e) => setNewCourseName(e.target.value)}
                 placeholder="Course name"
-                className="w-full border border-cream/20 bg-cream/5 px-3 py-2 text-sm text-cream placeholder:text-cream/40 focus:border-ice focus:outline-none"
+                className="w-full px-3 py-2 text-sm"
               />
             </form>
           )}
@@ -197,9 +196,9 @@ function CourseWorkspace() {
             )}
           </ul>
 
-          <h2 className="mt-10 text-xs font-medium uppercase tracking-[0.2em] text-red">
+          <Kicker as="h2" className="mt-10">
             Documents
-          </h2>
+          </Kicker>
           <ul className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
             {activeCourse ? (
               visibleDocuments.length > 0 ? (
@@ -234,13 +233,13 @@ function CourseWorkspace() {
             onChange={handleUpload}
             className="hidden"
           />
-          <button
+          <ActionButton
             onClick={() => fileInputRef.current?.click()}
             disabled={!activeCourseId || uploading}
-            className="mt-6 border border-ice px-4 py-2.5 text-sm font-medium uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night disabled:cursor-not-allowed disabled:opacity-40"
+            className="mt-6 px-4 py-2.5"
           >
             {uploading ? "Uploading…" : "Upload PDF"}
-          </button>
+          </ActionButton>
 
           {railError && <p className="mt-4 text-sm text-red">{railError}</p>}
         </aside>

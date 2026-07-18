@@ -9,7 +9,9 @@ import {
   FiPlus,
 } from "react-icons/fi";
 import { Logomark, SiteHeader } from "../components/SiteChrome";
+import { ActionButton, Field, Kicker } from "../components/ui";
 import { createCourse, listCourses, listDocuments } from "../lib/api";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const ACTIONS = [
   {
@@ -45,6 +47,8 @@ function pluralizePdf(count) {
 }
 
 function Dashboard() {
+  useDocumentTitle("Dashboard");
+
   const [courses, setCourses] = useState([]);
   const [documentCounts, setDocumentCounts] = useState({});
   const [newCourseName, setNewCourseName] = useState("");
@@ -150,14 +154,11 @@ function Dashboard() {
             onSubmit={handleCreateCourse}
             className="border border-cream/12 bg-cream/[0.035] p-5"
           >
-            <label
-              htmlFor="dashboard-course-name"
-              className="text-xs font-medium uppercase tracking-[0.2em] text-red"
-            >
+            <Kicker as="label" htmlFor="dashboard-course-name">
               New course
-            </label>
+            </Kicker>
             <div className="mt-4 flex gap-3">
-              <input
+              <Field
                 id="dashboard-course-name"
                 ref={courseInputRef}
                 value={newCourseName}
@@ -166,17 +167,17 @@ function Dashboard() {
                   if (courseNameHint) setCourseNameHint("");
                 }}
                 placeholder="e.g. ENGG 319"
-                className="min-w-0 flex-1 border border-cream/15 bg-night px-4 py-3 text-sm text-cream placeholder:text-cream/35 focus:border-ice focus:outline-none"
+                className="min-w-0 flex-1 px-4 py-3 text-sm"
               />
-              <button
+              <ActionButton
                 type="submit"
                 disabled={creating}
-                className="flex h-12 shrink-0 items-center justify-center gap-2 border border-ice px-4 text-sm font-medium uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night disabled:cursor-wait disabled:opacity-50"
+                className="flex h-12 shrink-0 items-center justify-center gap-2 px-4"
                 aria-label="Create course"
               >
                 <FiPlus aria-hidden="true" />
                 <span>{creating ? "Adding" : "Add"}</span>
-              </button>
+              </ActionButton>
             </div>
             {courseNameHint && (
               <p className="mt-2 text-sm text-red">{courseNameHint}</p>
@@ -194,17 +195,15 @@ function Dashboard() {
         )}
 
         <section className="grid gap-4 border-b border-cream/10 py-6 sm:grid-cols-3">
-          <Stat label="Courses" value={loading ? "..." : courses.length} />
-          <Stat label="Uploaded PDFs" value={loading ? "..." : totalDocuments} />
+          <Stat label="Courses" value={courses.length} loading={loading} />
+          <Stat label="Uploaded PDFs" value={totalDocuments} loading={loading} />
           <Stat label="Tools Ready" value="3" />
         </section>
 
         <section className="flex min-h-0 flex-1 flex-col py-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-red">
-                Workspace
-              </p>
+              <Kicker>Workspace</Kicker>
               <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">
                 Courses
               </h2>
@@ -244,15 +243,19 @@ function Dashboard() {
   );
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, loading = false }) {
   return (
     <div className="flex items-end justify-between border border-cream/10 px-5 py-4">
       <span className="text-xs uppercase tracking-[0.18em] text-cream/42">
         {label}
       </span>
-      <span className="font-display text-3xl font-semibold text-ice">
-        {value}
-      </span>
+      {loading ? (
+        <span className="h-9 w-10 animate-pulse bg-cream/10" aria-hidden="true" />
+      ) : (
+        <span className="font-display text-3xl font-semibold text-ice">
+          {value}
+        </span>
+      )}
     </div>
   );
 }

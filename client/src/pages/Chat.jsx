@@ -6,6 +6,8 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
 import { ArrowGlyph, Logomark } from "../components/SiteChrome";
+import { ActionButton, Field, Kicker } from "../components/ui";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 import {
   createChatSession,
   deleteChatSession,
@@ -19,6 +21,8 @@ function makeChatTitle(question) {
 }
 
 function Chat() {
+  useDocumentTitle("Chat");
+
   // course + documents come from the CourseWorkspace layout; chat owns only
   // the saved sessions and the live conversation.
   const { activeCourse } = useOutletContext();
@@ -194,9 +198,7 @@ function Chat() {
       {/* saved chat sessions (chat-specific — not part of the shared rail) */}
       <aside className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-cream/10 px-5 py-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-medium uppercase tracking-[0.2em] text-red">
-            Chats
-          </h2>
+          <Kicker as="h2">Chats</Kicker>
           <button
             onClick={handleNewChat}
             disabled={!activeCourse}
@@ -278,23 +280,23 @@ function Chat() {
           className="shrink-0 border-t border-cream/10 px-8 py-5"
         >
           <div className="mx-auto flex max-w-3xl items-center gap-3">
-            <input
+            <Field
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder={
                 activeCourse ? "Ask your notes anything…" : "Pick a course first…"
               }
               disabled={!activeCourse || sending}
-              className="flex-1 border border-cream/20 bg-cream/5 px-4 py-3 text-cream placeholder:text-cream/40 focus:border-ice focus:outline-none disabled:opacity-40"
+              className="flex-1 px-4 py-3"
             />
-            <button
+            <ActionButton
               type="submit"
               disabled={!activeCourse || sending || !question.trim()}
-              className="flex items-center gap-2 border border-ice px-5 py-3 text-sm font-medium uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-2 px-5 py-3"
             >
               <span>Send</span>
               <ArrowGlyph className="h-4 w-4" />
-            </button>
+            </ActionButton>
           </div>
         </form>
       </main>

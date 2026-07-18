@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export function Logomark({ className }) {
   return (
@@ -32,9 +32,16 @@ export function ArrowGlyph({ className }) {
   );
 }
 
-function FlipLink({ to, children }) {
+function FlipLink({ to, active = false, children }) {
   return (
-    <Link to={to} className="nav-link text-base uppercase tracking-widest text-ice md:text-lg">
+    <Link
+      to={to}
+      aria-current={active ? "page" : undefined}
+      className={
+        "nav-link text-base uppercase tracking-widest md:text-lg " +
+        (active ? "text-cream" : "text-ice")
+      }
+    >
       <span className="nav-label">{children}</span>
       <span className="nav-label" aria-hidden="true">
         {children}
@@ -55,6 +62,12 @@ function FlipSocial({ href, children }) {
 }
 
 export function SiteHeader({ drop = false, logoHidden = false, logoRef = null }) {
+  // Landing keeps the marketing header; inside the app the nav marks the
+  // active tool and the CTA points home to the Dashboard instead of "Open app".
+  const { pathname } = useLocation();
+  const inApp = pathname !== "/";
+  const onDashboard = pathname === "/dashboard";
+
   return (
     <header
       data-header
@@ -65,9 +78,15 @@ export function SiteHeader({ drop = false, logoHidden = false, logoRef = null })
     >
       <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-6 py-6 md:px-8 lg:px-10">
         <nav className="flex items-center justify-start gap-16">
-          <FlipLink to="/chat">Chat</FlipLink>
-          <FlipLink to="/quiz">Quiz</FlipLink>
-          <FlipLink to="/study-plan">Study Plan</FlipLink>
+          <FlipLink to="/chat" active={pathname === "/chat"}>
+            Chat
+          </FlipLink>
+          <FlipLink to="/quiz" active={pathname === "/quiz"}>
+            Quiz
+          </FlipLink>
+          <FlipLink to="/study-plan" active={pathname === "/study-plan"}>
+            Study Plan
+          </FlipLink>
           <FlipLink to="/#faq">FAQ</FlipLink>
         </nav>
 
@@ -82,9 +101,15 @@ export function SiteHeader({ drop = false, logoHidden = false, logoRef = null })
 
         <Link
           to="/dashboard"
-          className="justify-self-end flex items-center gap-3 border border-ice px-5 py-2.5 text-base font-semibold uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night md:px-6 md:py-3 md:text-lg"
+          aria-current={onDashboard ? "page" : undefined}
+          className={
+            "justify-self-end flex items-center gap-3 border border-ice px-5 py-2.5 text-base font-semibold uppercase tracking-wide transition-colors md:px-6 md:py-3 md:text-lg " +
+            (onDashboard
+              ? "bg-ice text-night"
+              : "text-ice hover:bg-ice hover:text-night")
+          }
         >
-          <span>Open app</span>
+          <span>{inApp ? "Dashboard" : "Open app"}</span>
           <ArrowGlyph className="h-4 w-4" />
         </Link>
       </div>

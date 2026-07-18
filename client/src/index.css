@@ -19,6 +19,38 @@
   body {
     @apply bg-night text-cream font-body antialiased;
   }
+
+  /* thin themed scrollbars — the OS default light bars glare on the night
+     theme in every scroll region (rail, chat list, thread) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(225, 214, 206, 0.25) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(225, 214, 206, 0.22);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(225, 214, 206, 0.38);
+  }
+
+  ::selection {
+    background-color: var(--color-ice);
+    color: var(--color-night);
+  }
+
+  /* keyboard focus: inputs already restyle their border; buttons and links
+     get an ice ring (utilities like focus:outline-none still win where set) */
+  :focus-visible {
+    outline: 2px solid var(--color-ice);
+    outline-offset: 2px;
+  }
 }
 
 /* nav hover: label rolls up, its clone flips in from below */

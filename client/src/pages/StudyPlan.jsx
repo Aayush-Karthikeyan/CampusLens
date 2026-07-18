@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { ActionButton, Field, Kicker } from "../components/ui";
 import { generateStudyPlan, getStudyPlan, toggleStudyTask } from "../lib/api";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 // yyyy-mm-dd for <input type="date">, in local time (toISOString would shift
 // the day for anyone behind UTC).
@@ -33,6 +35,8 @@ function daysUntil(dateish) {
 }
 
 function StudyPlan() {
+  useDocumentTitle("Study Plan");
+
   // course + documents come from the CourseWorkspace layout rail.
   const { activeCourse, documents } = useOutletContext();
   const activeCourseId = activeCourse?._id || null;
@@ -117,7 +121,7 @@ function StudyPlan() {
   if (!activeCourse) {
     return (
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
-        <p className="text-xs uppercase tracking-[0.2em] text-red">Study Plan</p>
+        <Kicker>Study Plan</Kicker>
         <h1 className="mt-4 font-display text-5xl font-semibold tracking-tight">
           Pick a course
         </h1>
@@ -133,7 +137,7 @@ function StudyPlan() {
     const hasDocs = documents.length > 0;
     return (
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-8 py-10 text-center">
-        <p className="text-xs uppercase tracking-[0.2em] text-red">Study Plan</p>
+        <Kicker>Study Plan</Kicker>
         <h1 className="mt-4 font-display text-5xl font-semibold tracking-tight">
           {activeCourse.name}
         </h1>
@@ -150,12 +154,12 @@ function StudyPlan() {
                 <span className="text-xs uppercase tracking-[0.2em] text-cream/50">
                   Exam date
                 </span>
-                <input
+                <Field
                   type="date"
                   value={examDate}
                   min={toDateInput(tomorrow())}
                   onChange={(e) => setExamDate(e.target.value)}
-                  className="border border-cream/20 bg-cream/5 px-4 py-2.5 text-cream focus:border-ice focus:outline-none"
+                  className="px-4 py-2.5"
                 />
               </label>
 
@@ -163,24 +167,24 @@ function StudyPlan() {
                 <span className="text-xs uppercase tracking-[0.2em] text-cream/50">
                   Focus on (optional)
                 </span>
-                <input
+                <Field
                   type="text"
                   value={focus}
                   onChange={(e) => setFocus(e.target.value)}
                   placeholder="e.g. probability and Bayes' theorem"
-                  className="w-full border border-cream/20 bg-cream/5 px-4 py-2.5 text-center text-cream placeholder:text-cream/40 focus:border-ice focus:outline-none"
+                  className="w-full px-4 py-2.5 text-center"
                 />
               </label>
             </div>
 
             <div className="mt-8 flex items-center gap-4">
-              <button
+              <ActionButton
                 onClick={handleGenerate}
                 disabled={loading || !examDate}
-                className="border border-ice px-8 py-3 text-sm font-medium uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night disabled:cursor-not-allowed disabled:opacity-50"
+                className="px-8 py-3"
               >
                 {loading ? "Building your plan…" : "Generate plan"}
-              </button>
+              </ActionButton>
               {plan && !loading && (
                 <button
                   onClick={() => setEditing(false)}
@@ -213,9 +217,7 @@ function StudyPlan() {
       <div className="mx-auto w-full max-w-2xl">
         <div className="flex items-baseline justify-between gap-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-red">
-              Study Plan · {activeCourse.name}
-            </p>
+            <Kicker>Study Plan · {activeCourse.name}</Kicker>
             <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
               Your {plan.days.length}-day plan
             </h1>
@@ -303,12 +305,9 @@ function StudyPlan() {
         </ol>
 
         <div className="mt-12">
-          <button
-            onClick={() => setEditing(true)}
-            className="border border-ice px-8 py-3 text-sm font-medium uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night"
-          >
+          <ActionButton onClick={() => setEditing(true)} className="px-8 py-3">
             Regenerate plan
-          </button>
+          </ActionButton>
         </div>
       </div>
     </main>

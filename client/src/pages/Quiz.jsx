@@ -1,10 +1,14 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { ActionButton, Kicker } from "../components/ui";
 import { generateQuiz } from "../lib/api";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const COUNT_OPTIONS = [3, 5, 10];
 
 function Quiz() {
+  useDocumentTitle("Quiz");
+
   // course + documents come from the CourseWorkspace layout rail.
   const { activeCourse, documents } = useOutletContext();
   const activeCourseId = activeCourse?._id || null;
@@ -61,7 +65,7 @@ function Quiz() {
   if (!activeCourse) {
     return (
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
-        <p className="text-xs uppercase tracking-[0.2em] text-red">Quiz</p>
+        <Kicker>Quiz</Kicker>
         <h1 className="mt-4 font-display text-5xl font-semibold tracking-tight">
           Pick a course
         </h1>
@@ -77,7 +81,7 @@ function Quiz() {
     const hasDocs = documents.length > 0;
     return (
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
-        <p className="text-xs uppercase tracking-[0.2em] text-red">Quiz</p>
+        <Kicker>Quiz</Kicker>
         <h1 className="mt-4 font-display text-5xl font-semibold tracking-tight">
           {activeCourse.name}
         </h1>
@@ -107,13 +111,13 @@ function Quiz() {
               ))}
             </div>
 
-            <button
+            <ActionButton
               onClick={handleGenerate}
               disabled={phase === "loading"}
-              className="mt-8 border border-ice px-8 py-3 text-sm font-medium uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-8 px-8 py-3"
             >
               {phase === "loading" ? "Building your quiz…" : "Generate quiz"}
-            </button>
+            </ActionButton>
           </>
         )}
 
@@ -128,9 +132,7 @@ function Quiz() {
       <div className="mx-auto w-full max-w-2xl">
         <div className="flex items-baseline justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-red">
-              Quiz · {activeCourse.name}
-            </p>
+            <Kicker>Quiz · {activeCourse.name}</Kicker>
             <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
               {phase === "results" ? "Results" : `${questions.length} questions`}
             </h1>
@@ -209,20 +211,17 @@ function Quiz() {
 
         <div className="mt-12 flex items-center gap-4">
           {phase === "active" ? (
-            <button
+            <ActionButton
               onClick={() => setPhase("results")}
               disabled={!allAnswered}
-              className="border border-ice px-8 py-3 text-sm font-medium uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night disabled:cursor-not-allowed disabled:opacity-50"
+              className="px-8 py-3"
             >
               {allAnswered ? "Submit quiz" : "Answer all questions"}
-            </button>
+            </ActionButton>
           ) : (
-            <button
-              onClick={resetToSetup}
-              className="border border-ice px-8 py-3 text-sm font-medium uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night"
-            >
+            <ActionButton onClick={resetToSetup} className="px-8 py-3">
               New quiz
-            </button>
+            </ActionButton>
           )}
         </div>
       </div>
