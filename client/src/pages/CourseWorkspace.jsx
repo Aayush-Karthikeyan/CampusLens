@@ -2,6 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useSearchParams } from "react-router-dom";
 import { Logomark, SiteHeader } from "../components/SiteChrome";
 import { ActionButton, Field, Kicker } from "../components/ui";
+import { useConfirm } from "../lib/useConfirm";
 import {
   createCourse,
   deleteCourse,
@@ -31,6 +32,11 @@ function CourseWorkspace() {
   const [railError, setRailError] = useState(null);
 
   const fileInputRef = useRef(null);
+  const { confirm, confirmDialog } = useConfirm();
+
+  // portal target below Documents: tools with rail-worthy lists (Chat's saved
+  // chats) render into it instead of stacking a second sidebar
+  const [railSlot, setRailSlot] = useState(null);
 
   const activeCourse = useMemo(
     () => courses.find((course) => course._id === activeCourseId) || null,
@@ -87,9 +93,11 @@ function CourseWorkspace() {
   }
 
   async function handleDeleteCourse(course) {
-    const ok = window.confirm(
-      `Delete "${course.name}"? This removes its PDFs, saved chats, and search data.`
-    );
+    const ok = await confirm({
+      title: "Delete course",
+      body: `"${course.name}" will take its PDFs, saved chats, and search data with it.`,
+      confirmLabel: "Delete course",
+    });
     if (!ok) return;
 
     setRailError(null);
@@ -106,7 +114,11 @@ function CourseWorkspace() {
 
   async function handleDeleteDocument(doc) {
     if (!activeCourseId) return;
-    const ok = window.confirm(`Delete "${doc.filename}" from this course?`);
+    const ok = await confirm({
+      title: "Delete document",
+      body: `"${doc.filename}" will be removed from this course and its search index.`,
+      confirmLabel: "Delete",
+    });
     if (!ok) return;
 
     setRailError(null);
@@ -199,7 +211,7 @@ function CourseWorkspace() {
           <Kicker as="h2" className="mt-10">
             Documents
           </Kicker>
-          <ul className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
+          <ul className="mt-4 flex flex-col gap-3">
             {activeCourse ? (
               visibleDocuments.length > 0 ? (
                 visibleDocuments.map((doc) => (
@@ -241,15 +253,21 @@ function CourseWorkspace() {
             {uploading ? "Uploading…" : "Upload PDF"}
           </ActionButton>
 
+          <div ref={setRailSlot} className="mt-10 flex min-h-0 flex-1 flex-col" />
+
           {railError && <p className="mt-4 text-sm text-red">{railError}</p>}
         </aside>
 
         {/* inner boundary: while a tool's lazy chunk loads, only this region
             suspends — the rail above stays mounted and keeps the course. */}
         <Suspense fallback={<div className="flex min-h-0 flex-1" />}>
-          <Outlet context={{ activeCourse, documents: visibleDocuments }} />
+          <Outlet
+            context={{ activeCourse, documents: visibleDocuments, railSlot }}
+          />
         </Suspense>
       </div>
+
+      {confirmDialog}
     </div>
   );
 }

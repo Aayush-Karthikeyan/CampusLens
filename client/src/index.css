@@ -375,6 +375,56 @@
   }
 }
 
+/* app-page entrances: a lighter cousin of the landing's hero-enter — same
+   blur-into-focus feel, but fast and unsynced to the intro timeline */
+.fade-up {
+  animation: fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.fade-up-1 {
+  animation-delay: 90ms;
+}
+
+.fade-up-2 {
+  animation-delay: 180ms;
+}
+
+.fade-up-3 {
+  animation-delay: 270ms;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.9rem);
+    filter: blur(6px);
+  }
+}
+
+/* chat messages and source panels sliding into place */
+.msg-enter {
+  animation: msg-enter 300ms ease backwards;
+}
+
+@keyframes msg-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+/* confirm dialog pop */
+.dialog-in {
+  animation: dialog-in 200ms ease backwards;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.98);
+  }
+}
+
 /* chat "thinking" dots while waiting on the model */
 .thinking-dot {
   animation: mint-pulse 1.2s ease-in-out infinite;
@@ -692,6 +742,11 @@
   .thinking-dot {
     animation: none;
     opacity: 0.6;
+  }
+  .fade-up,
+  .msg-enter,
+  .dialog-in {
+    animation: none;
   }
   .footer-physics {
     pointer-events: none;
