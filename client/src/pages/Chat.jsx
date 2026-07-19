@@ -74,6 +74,22 @@ function Chat() {
     if (activeCourseId) inputRef.current?.focus();
   }, [activeCourseId]);
 
+  // grow the textarea with its content (capped ~5 lines), shrink when cleared
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 150)}px`;
+  }, [question]);
+
+  // Enter sends, Shift+Enter makes a newline
+  function handleInputKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      sendQuestion(question);
+    }
+  }
+
   // load the active course's saved chats whenever it changes. No active course →
   // nothing to fetch; the derived values already render empty and guard by course.
   useEffect(() => {
@@ -290,8 +306,8 @@ function Chat() {
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-8 py-10">
           {!activeCourse ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <Kicker className="fade-up">Chat</Kicker>
-              <h1 className="fade-up fade-up-1 mt-4 font-display text-5xl font-semibold tracking-tight">
+              <p className="fade-up font-display text-3xl text-red">( chat )</p>
+              <h1 className="fade-up fade-up-1 mt-5 font-display text-6xl font-semibold tracking-tight md:text-7xl">
                 Pick a course
               </h1>
               <p className="fade-up fade-up-2 mt-6 max-w-md text-cream/60">
@@ -301,13 +317,13 @@ function Chat() {
             </div>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <Kicker className="fade-up">{activeCourse.name}</Kicker>
-              <h1 className="fade-up fade-up-1 mt-4 max-w-2xl font-display text-5xl font-semibold tracking-tight md:text-6xl">
+              <p className="fade-up font-display text-3xl text-red">( chat )</p>
+              <h1 className="fade-up fade-up-1 mt-5 max-w-2xl font-display text-6xl font-semibold tracking-tight md:text-7xl">
                 Ask your notes anything.
               </h1>
               <p className="fade-up fade-up-2 mt-6 max-w-md text-cream/60">
-                Every answer comes straight from your uploaded material — with
-                receipts.
+                Every answer comes straight from {activeCourse.name}'s uploads —
+                with receipts.
               </p>
               <div className="fade-up fade-up-3 mt-10 flex max-w-2xl flex-wrap items-center justify-center gap-3">
                 {STARTER_PROMPTS.map((prompt) => (
@@ -350,16 +366,18 @@ function Chat() {
           onSubmit={handleSend}
           className="shrink-0 border-t border-cream/10 px-8 py-5"
         >
-          <div className="mx-auto flex max-w-3xl items-center gap-2 border border-cream/15 bg-cream/[0.03] p-2 transition-colors focus-within:border-ice/70">
-            <input
+          <div className="mx-auto flex max-w-3xl items-end gap-2 border border-cream/15 bg-cream/[0.03] p-2 transition-colors focus-within:border-ice/70">
+            <textarea
               ref={inputRef}
+              rows={1}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={handleInputKeyDown}
               placeholder={
                 activeCourse ? "Ask your notes anything…" : "Pick a course first…"
               }
               disabled={!activeCourse || sending}
-              className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-cream placeholder:text-cream/40 focus:outline-none disabled:opacity-40"
+              className="min-w-0 flex-1 resize-none bg-transparent px-3 py-2.5 leading-relaxed text-cream placeholder:text-cream/40 focus:outline-none disabled:opacity-40"
             />
             <ActionButton
               type="submit"
@@ -419,13 +437,32 @@ function MarkdownMessage({ text }) {
 function AssistantMessage({ msg }) {
   // which citation chip is expanded to show its source passage (null = none)
   const [openNumber, setOpenNumber] = useState(null);
+  const [copied, setCopied] = useState(false);
   const openSource = msg.sources?.find((s) => s.number === openNumber) || null;
 
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(msg.text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // clipboard unavailable (permissions/insecure context) — quietly skip
+    }
+  }
+
   return (
-    <div className="msg-enter flex flex-col gap-3">
+    <div className="group msg-enter flex flex-col gap-3">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-cream/50">
         <Logomark className="h-4 w-4 text-ice" />
         campuslens
+        {!msg.pending && !msg.error && msg.text && (
+          <button
+            onClick={handleCopy}
+            className="ml-auto text-xs uppercase tracking-wide text-cream/35 opacity-0 transition hover:text-ice focus:opacity-100 group-hover:opacity-100"
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        )}
       </div>
 
       {msg.pending && !msg.text ? (

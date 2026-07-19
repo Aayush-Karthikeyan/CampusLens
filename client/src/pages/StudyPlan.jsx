@@ -121,11 +121,11 @@ function StudyPlan() {
   if (!activeCourse) {
     return (
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
-        <Kicker>Study Plan</Kicker>
-        <h1 className="mt-4 font-display text-5xl font-semibold tracking-tight">
+        <p className="fade-up font-display text-3xl text-red">( study plan )</p>
+        <h1 className="fade-up fade-up-1 mt-5 font-display text-6xl font-semibold tracking-tight md:text-7xl">
           Pick a course
         </h1>
-        <p className="mt-6 max-w-md text-cream/60">
+        <p className="fade-up fade-up-2 mt-6 max-w-md text-cream/60">
           Choose a course from the rail to build a study plan from its material.
         </p>
       </main>
@@ -137,19 +137,19 @@ function StudyPlan() {
     const hasDocs = documents.length > 0;
     return (
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-8 py-10 text-center">
-        <Kicker>Study Plan</Kicker>
-        <h1 className="mt-4 font-display text-5xl font-semibold tracking-tight">
+        <p className="fade-up font-display text-3xl text-red">( study plan )</p>
+        <h1 className="fade-up fade-up-1 mt-5 font-display text-6xl font-semibold tracking-tight md:text-7xl">
           {activeCourse.name}
         </h1>
-        <p className="mt-6 max-w-md text-cream/60">
+        <p className="fade-up fade-up-2 mt-6 max-w-md text-cream/60">
           {hasDocs
-            ? "Tell me when the exam is and I'll build a day-by-day plan from your actual notes — not a generic template."
+            ? "A plan built from your course, not a template — tell me when the exam is and I'll map every day to your actual notes."
             : "Upload a PDF for this course first, then I can build you a plan from it."}
         </p>
 
         {hasDocs && (
           <>
-            <div className="mt-10 flex flex-col items-center gap-5">
+            <div className="fade-up fade-up-3 mt-10 flex flex-col items-center gap-5">
               <label className="flex flex-col items-center gap-2">
                 <span className="text-xs uppercase tracking-[0.2em] text-cream/50">
                   Exam date
@@ -215,8 +215,8 @@ function StudyPlan() {
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-10">
       <div className="mx-auto w-full max-w-2xl">
-        <div className="flex items-baseline justify-between gap-6">
-          <div>
+        <div className="fade-up flex items-end justify-between gap-6">
+          <div className="min-w-0">
             <Kicker>Study Plan · {activeCourse.name}</Kicker>
             <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
               Your {plan.days.length}-day plan
@@ -225,33 +225,46 @@ function StudyPlan() {
               Exam: {formatDay(plan.examDate)}
               {plan.focus && ` · Focus: ${plan.focus}`}
             </p>
-            <p className="mt-1 text-sm text-cream/40">
+            <p className="mt-3 text-sm text-cream/40">
               {doneTasks} of {totalTasks} tasks done
             </p>
+            <div className="mt-2 h-1 w-56 max-w-full bg-cream/10">
+              <div
+                className="h-full bg-ice transition-all duration-500"
+                style={{
+                  width: `${totalTasks ? (doneTasks / totalTasks) * 100 : 0}%`,
+                }}
+              />
+            </div>
           </div>
-          <div className="shrink-0 text-right">
-            <p className="font-display text-4xl font-semibold text-ice">
+          {/* red finally gets a surface — the one number that deserves urgency */}
+          <div className="shrink-0 bg-red px-6 py-4 text-center text-cream">
+            <p className="font-display text-5xl font-extrabold leading-none md:text-6xl">
               {countdown > 0 ? countdown : 0}
             </p>
-            <p className="text-xs uppercase tracking-wide text-cream/40">
+            <p className="mt-1.5 text-xs font-medium uppercase tracking-wide text-cream/80">
               {countdown === 1 ? "day to exam" : "days to exam"}
             </p>
           </div>
         </div>
 
-        <ol className="mt-10 flex flex-col gap-8">
+        <ol className="mt-10 flex flex-col gap-10">
           {plan.days.map((d) => (
-            <li key={d.day} className="border-l-2 border-cream/15 pl-5">
-              <div className="flex items-baseline gap-3">
-                <span className="font-display text-lg font-semibold text-ice">
-                  Day {d.day}
-                </span>
-                <span className="text-xs uppercase tracking-wide text-cream/40">
-                  {formatDay(d.date)}
-                </span>
-              </div>
+            <li key={d.day} className="flex gap-5">
+              {/* ghosted display numeral — study days are literal chapters */}
+              <span
+                aria-hidden="true"
+                className="w-16 shrink-0 text-right font-display text-6xl font-extrabold leading-none text-cream/10"
+              >
+                {String(d.day).padStart(2, "0")}
+              </span>
 
-              <h2 className="mt-1 font-medium leading-relaxed">{d.focus}</h2>
+              <div className="min-w-0 flex-1 pt-1.5">
+                <span className="text-xs uppercase tracking-wide text-ice">
+                  Day {d.day} · {formatDay(d.date)}
+                </span>
+
+                <h2 className="mt-1.5 font-medium leading-relaxed">{d.focus}</h2>
 
               {d.tasks.length > 0 && (
                 <ul className="mt-3 flex flex-col gap-2">
@@ -288,18 +301,19 @@ function StudyPlan() {
                 </ul>
               )}
 
-              {showSources && d.sources.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {d.sources.map((src, i) => (
-                    <span
-                      key={i}
-                      className="border border-cream/15 px-2.5 py-1 text-xs text-cream/50"
-                    >
-                      {src}
-                    </span>
-                  ))}
-                </div>
-              )}
+                {showSources && d.sources.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {d.sources.map((src, i) => (
+                      <span
+                        key={i}
+                        className="border border-cream/15 px-2.5 py-1 text-xs text-cream/50"
+                      >
+                        {src}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </li>
           ))}
         </ol>

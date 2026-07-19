@@ -65,11 +65,11 @@ function Quiz() {
   if (!activeCourse) {
     return (
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
-        <Kicker>Quiz</Kicker>
-        <h1 className="mt-4 font-display text-5xl font-semibold tracking-tight">
+        <p className="fade-up font-display text-3xl text-red">( quiz )</p>
+        <h1 className="fade-up fade-up-1 mt-5 font-display text-6xl font-semibold tracking-tight md:text-7xl">
           Pick a course
         </h1>
-        <p className="mt-6 max-w-md text-cream/60">
+        <p className="fade-up fade-up-2 mt-6 max-w-md text-cream/60">
           Choose a course from the rail to build a quiz from its material.
         </p>
       </main>
@@ -81,19 +81,19 @@ function Quiz() {
     const hasDocs = documents.length > 0;
     return (
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
-        <Kicker>Quiz</Kicker>
-        <h1 className="mt-4 font-display text-5xl font-semibold tracking-tight">
+        <p className="fade-up font-display text-3xl text-red">( quiz )</p>
+        <h1 className="fade-up fade-up-1 mt-5 font-display text-6xl font-semibold tracking-tight md:text-7xl">
           {activeCourse.name}
         </h1>
-        <p className="mt-6 max-w-md text-cream/60">
+        <p className="fade-up fade-up-2 mt-6 max-w-md text-cream/60">
           {hasDocs
-            ? "Generate a practice quiz drawn straight from your uploaded material — no internet trivia, just what you'll be tested on."
+            ? "Test yourself before the exam does — every question drawn straight from your uploads, no internet trivia."
             : "Upload a PDF for this course first, then I can build you a quiz from it."}
         </p>
 
         {hasDocs && (
           <>
-            <div className="mt-10 flex items-center gap-3">
+            <div className="fade-up fade-up-3 mt-10 flex items-center gap-3">
               <span className="text-sm text-cream/50">Questions:</span>
               {COUNT_OPTIONS.map((n) => (
                 <button
@@ -114,7 +114,7 @@ function Quiz() {
             <ActionButton
               onClick={handleGenerate}
               disabled={phase === "loading"}
-              className="mt-8 px-8 py-3"
+              className="fade-up fade-up-3 mt-8 px-8 py-3"
             >
               {phase === "loading" ? "Building your quiz…" : "Generate quiz"}
             </ActionButton>
@@ -130,80 +130,103 @@ function Quiz() {
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-10">
       <div className="mx-auto w-full max-w-2xl">
-        <div className="flex items-baseline justify-between">
+        {phase === "results" ? (
+          // the graded paper: the page's one cream inversion, landing-style
+          <div className="fade-up flex items-end justify-between gap-6 bg-cream px-6 py-5 text-night">
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-red">
+                Results · {activeCourse.name}
+              </p>
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+                {score === questions.length
+                  ? "Perfect run."
+                  : score >= questions.length / 2
+                    ? "Solid work."
+                    : "Room to grow."}
+              </h1>
+            </div>
+            <p className="shrink-0 font-display text-7xl font-extrabold leading-none md:text-8xl">
+              {score}
+              <span className="text-4xl font-semibold text-night/40 md:text-5xl">
+                /{questions.length}
+              </span>
+            </p>
+          </div>
+        ) : (
           <div>
             <Kicker>Quiz · {activeCourse.name}</Kicker>
             <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
-              {phase === "results" ? "Results" : `${questions.length} questions`}
+              {questions.length} questions
             </h1>
           </div>
-          {phase === "results" && (
-            <p className="font-display text-4xl font-semibold text-ice">
-              {score}
-              <span className="text-cream/40">/{questions.length}</span>
-            </p>
-          )}
-        </div>
+        )}
 
         <ol className="mt-10 flex flex-col gap-10">
           {questions.map((q, qi) => {
             const selected = answers[qi];
             const graded = phase === "results";
             return (
-              <li key={qi}>
-                <p className="font-medium leading-relaxed">
-                  <span className="mr-2 text-cream/40">{qi + 1}.</span>
-                  {q.question}
-                </p>
+              <li key={qi} className="flex gap-5">
+                {/* ghosted display numeral — the landing's chapter-number motif */}
+                <span
+                  aria-hidden="true"
+                  className="w-12 shrink-0 text-right font-display text-4xl font-extrabold leading-none text-cream/12"
+                >
+                  {String(qi + 1).padStart(2, "0")}
+                </span>
 
-                <div className="mt-4 flex flex-col gap-2">
-                  {q.options.map((opt, oi) => {
-                    const isSelected = selected === oi;
-                    const isCorrect = q.correctIndex === oi;
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium leading-relaxed">{q.question}</p>
 
-                    // color logic: during the quiz, only highlight the pick;
-                    // after grading, mark correct green and a wrong pick red.
-                    let cls =
-                      "border-cream/15 text-cream/80 hover:border-ice/60";
-                    if (graded) {
-                      if (isCorrect)
-                        cls = "border-emerald-400/70 bg-emerald-400/10 text-cream";
-                      else if (isSelected)
-                        cls = "border-red bg-red/10 text-cream";
-                      else cls = "border-cream/10 text-cream/50";
-                    } else if (isSelected) {
-                      cls = "border-ice bg-ice/10 text-cream";
-                    }
+                  <div className="mt-4 flex flex-col gap-2">
+                    {q.options.map((opt, oi) => {
+                      const isSelected = selected === oi;
+                      const isCorrect = q.correctIndex === oi;
 
-                    return (
-                      <button
-                        key={oi}
-                        onClick={() => selectOption(qi, oi)}
-                        disabled={graded}
-                        className={
-                          "flex items-center gap-3 border px-4 py-3 text-left text-sm transition-colors disabled:cursor-default " +
-                          cls
-                        }
-                      >
-                        <span className="shrink-0 text-xs uppercase text-cream/40">
-                          {String.fromCharCode(65 + oi)}
-                        </span>
-                        <span>{opt}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                      // during the quiz the pick is cream; after grading, ice
+                      // marks correct and red marks a wrong pick — palette only
+                      let cls =
+                        "border-cream/15 text-cream/80 hover:border-cream/60";
+                      if (graded) {
+                        if (isCorrect)
+                          cls = "border-ice bg-ice/10 text-cream";
+                        else if (isSelected)
+                          cls = "border-red bg-red/10 text-cream";
+                        else cls = "border-cream/10 text-cream/50";
+                      } else if (isSelected) {
+                        cls = "border-cream bg-cream/10 text-cream";
+                      }
 
-                {graded && (
-                  <div className="mt-3 border-l-2 border-cream/15 pl-4 text-sm text-cream/60">
-                    {q.explanation && <p>{q.explanation}</p>}
-                    {q.source && (
-                      <p className="mt-1 text-xs uppercase tracking-wide text-cream/35">
-                        Source: {q.source}
-                      </p>
-                    )}
+                      return (
+                        <button
+                          key={oi}
+                          onClick={() => selectOption(qi, oi)}
+                          disabled={graded}
+                          className={
+                            "flex items-center gap-3 border px-4 py-3 text-left text-sm transition-colors disabled:cursor-default " +
+                            cls
+                          }
+                        >
+                          <span className="shrink-0 text-xs uppercase text-cream/40">
+                            {String.fromCharCode(65 + oi)}
+                          </span>
+                          <span>{opt}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
+
+                  {graded && (
+                    <div className="mt-3 border-l-2 border-cream/15 pl-4 text-sm text-cream/60">
+                      {q.explanation && <p>{q.explanation}</p>}
+                      {q.source && (
+                        <p className="mt-1 text-xs uppercase tracking-wide text-cream/35">
+                          Source: {q.source}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </li>
             );
           })}
