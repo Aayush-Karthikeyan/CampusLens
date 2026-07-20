@@ -4,6 +4,7 @@ const StudyPlan = require("../models/StudyPlan");
 const { query } = require("../rag/query");
 const { generateStudyPlan, PLAN_RETRIEVAL_SEED } = require("../rag/studyPlan");
 const { normalizeGeminiError } = require("../lib/geminiError");
+const { normalizeDbError } = require("../lib/httpError");
 
 const MAX_DAYS = 14;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -52,7 +53,11 @@ router.get("/", async (req, res) => {
     const plan = await StudyPlan.findOne({ course: courseId });
     res.json(plan);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const { statusCode, message } = normalizeDbError(
+      error,
+      "Could not load the study plan."
+    );
+    res.status(statusCode).json({ error: message });
   }
 });
 
@@ -82,7 +87,11 @@ router.patch("/task", async (req, res) => {
     await plan.save();
     res.json(plan);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const { statusCode, message } = normalizeDbError(
+      error,
+      "Could not update the task."
+    );
+    res.status(statusCode).json({ error: message });
   }
 });
 

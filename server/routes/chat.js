@@ -4,6 +4,7 @@ const ChatSession = require("../models/ChatSession");
 const { query } = require("../rag/query");
 const { buildPrompt, generateAnswerStream } = require("../rag/generate");
 const { normalizeGeminiError } = require("../lib/geminiError");
+const { normalizeDbError } = require("../lib/httpError");
 
 // Empirically measured on real course data: on-topic questions score ~0.63-0.70,
 // off-topic questions score ~0.45-0.49. 0.55 sits in the gap between them.
@@ -144,7 +145,11 @@ router.get("/sessions/:id", async (req, res) => {
 
     res.json(session);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const { statusCode, message } = normalizeDbError(
+      error,
+      "Could not load that chat."
+    );
+    res.status(statusCode).json({ error: message });
   }
 });
 
@@ -158,7 +163,11 @@ router.delete("/sessions/:id", async (req, res) => {
 
     res.json({ message: "Chat deleted" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const { statusCode, message } = normalizeDbError(
+      error,
+      "Could not delete that chat."
+    );
+    res.status(statusCode).json({ error: message });
   }
 });
 
