@@ -25,9 +25,9 @@ function makeTitle(question) {
   return `${clean.slice(0, 45)}...`;
 }
 
-function formatSources(matches) {
+function formatSources(matches, minScore = SOURCE_SCORE_THRESHOLD) {
   return matches
-    .filter((match) => Number(match.score) >= SOURCE_SCORE_THRESHOLD)
+    .filter((match) => Number(match.score) >= minScore)
     .map((match, i) => ({
       number: i + 1,
       source: match.metadata.source,
@@ -68,8 +68,22 @@ function getWeakContextAnswer(matches) {
   return [
     "Your notes are uploaded and searchable — but this question doesn't match any passage in them closely enough for me to answer honestly.",
     "",
-    "Try wording it with a phrase that appears in the PDF (a topic, a formula name, an example number). Broad questions like \"what's the trickiest concept?\" are on my to-learn list; for now I only answer what I can back with a citation, because pretending your notes said something they did not is how study tools become decorative nonsense.",
+    "Try wording it with a phrase that appears in the PDF (a topic, a formula name, an example number). Or zoom out — ask me to \"summarize the big ideas\" and I'll sample across everything you've uploaded. I only answer what your notes can back up, because pretending they said something they did not is how study tools become decorative nonsense.",
   ].join("\n");
+}
+
+// Broad "big picture" questions (summarize, what's on the exam, trickiest
+// topic) don't embed near any single passage — similarity search starves and
+// the weak-context guard fires even though the notes are fine. Detect them and
+// retrieve with a broad seed instead, the same trick the quiz generator uses.
+const BROAD_RETRIEVAL_SEED =
+  "core concepts, key definitions, important formulas, worked examples, main topics, and exam-style material";
+
+function isBroadQuestion(question) {
+  const q = question.toLowerCase();
+  return /summar|overview|big idea|main idea|big picture|key (topic|concept|idea|point|takeaway)|main takeaway|what.*(cover|included|in (my|the|these) notes)|trickiest|hardest|most (difficult|important)|most likely.*(exam|test)|on the (exam|test)|what should i (study|focus|review|know)|study guide|explain.*concept/.test(
+    q
+  );
 }
 
 async function saveAnswer(session, question, answer, sources = []) {
@@ -158,6 +172,7 @@ router.post("/", async (req, res) => {
   let session;
   let matches;
   let answerOverride = null;
+  let broadMode = false;
   try {
     const { courseId, question, sessionId } = req.body;
     if (!courseId || !question?.trim()) {
@@ -177,16 +192,31 @@ router.post("/", async (req, res) => {
     }
 
     answerOverride = getLocalAnswer(question);
-    matches = answerOverride ? [] : await query(question, courseId);
+    if (answerOverride) {
+      matches = [];
+    } else {
+      broadMode = isBroadQuestion(question);
+      // broad questions sample the course widely; specific ones search by the
+      // question itself
+      matches = broadMode
+        ? await query(BROAD_RETRIEVAL_SEED, courseId, 8)
+        : await query(question, courseId);
+    }
   } catch (error) {
     const normalized = normalizeChatError(error);
     return res.status(normalized.statusCode).json({ error: normalized.message });
   }
 
   const { question } = req.body;
-  const guardedAnswer = answerOverride || getWeakContextAnswer(matches);
+  // broad mode: the score measures seed-vs-chunk similarity, not the user's
+  // question, so the threshold guard doesn't apply — having chunks is enough
+  const guardedAnswer =
+    answerOverride ||
+    (broadMode && matches.length > 0 ? null : getWeakContextAnswer(matches));
   const prompt = guardedAnswer ? null : buildPrompt(matches, question);
-  const sources = formatSources(matches);
+  const sources = broadMode
+    ? formatSources(matches.slice(0, 4), 0)
+    : formatSources(matches);
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
