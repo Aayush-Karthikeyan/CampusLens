@@ -22,12 +22,8 @@ async function storePDF(filePath, courseId, sourceName, documentId = null) {
         chunkIndex: i,
       },
     });
-    console.log(`Embedded chunk ${i + 1}/${chunks.length}`);
   }
-  console.log("Vectors ready:", vectors.length);
-  console.log("First vector id:", vectors[0]?.id);
-  console.log("First values type:", Array.isArray(vectors[0]?.values), vectors[0]?.values?.length);
-    await index.upsert({ records: vectors });
-  console.log("Stored all vectors in Pinecone");
+  await index.upsert({ records: vectors });
+  console.log(`Stored ${vectors.length} chunks for "${sourceName}"`);
 }
 module.exports = { storePDF };
