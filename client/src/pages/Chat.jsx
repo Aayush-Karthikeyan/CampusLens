@@ -116,6 +116,10 @@ function Chat() {
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  // synchronous reentrancy guard: `sending` state updates a tick late, so two
+  // fast Enters / chip clicks could both pass the guard and create duplicate
+  // sessions before the first render. A ref flips immediately.
+  const sendingRef = useRef(false);
 
   // the input is the page's focal control — hand it focus as soon as a course
   // is in play so asking is zero-click
@@ -224,7 +228,10 @@ function Chat() {
   // shared by the form submit and the starter-prompt chips
   async function sendQuestion(rawQuestion) {
     const q = rawQuestion.trim();
-    if (!q || !activeCourse || sending) return;
+    if (!q || !activeCourse || sendingRef.current) return;
+
+    sendingRef.current = true;
+    setSending(true);
 
     const courseId = activeCourse._id;
     let optimisticSession = null;
@@ -242,7 +249,6 @@ function Chat() {
       };
 
       setQuestion("");
-      setSending(true);
       putSessionFirst(optimisticSession);
 
       // stream: update the pending assistant bubble as each chunk arrives,
@@ -282,6 +288,7 @@ function Chat() {
         setChatError(err.message);
       }
     } finally {
+      sendingRef.current = false;
       setSending(false);
       inputRef.current?.focus();
     }
@@ -379,7 +386,8 @@ function Chat() {
                   <button
                     key={prompt}
                     onClick={() => sendQuestion(prompt)}
-                    className="border border-cream/15 px-4 py-2.5 text-sm text-cream/70 transition-colors hover:border-ice hover:text-ice"
+                    disabled={sending}
+                    className="border border-cream/15 px-4 py-2.5 text-sm text-cream/70 transition-colors hover:border-ice hover:text-ice disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {prompt}
                   </button>

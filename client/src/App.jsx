@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const Landing = lazy(() => import('./pages/Landing'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -10,18 +11,20 @@ const StudyPlan = lazy(() => import('./pages/StudyPlan'))
 
 function App() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-night text-cream" />}>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        {/* shared rail layout — chat/quiz/study-plan render inside it and keep the selected course */}
-        <Route element={<CourseWorkspace />}>
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/quiz" element={<Quiz />} />
-          <Route path="/study-plan" element={<StudyPlan />} />
-        </Route>
-      </Routes>
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<div className="min-h-screen bg-night text-cream" />}>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          {/* shared rail layout — chat/quiz/study-plan render inside it and keep the selected course */}
+          <Route element={<CourseWorkspace />}>
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/quiz" element={<Quiz />} />
+            <Route path="/study-plan" element={<StudyPlan />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   )
 }
 

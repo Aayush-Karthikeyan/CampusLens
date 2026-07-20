@@ -45,8 +45,20 @@ function StudyPlan() {
   const [examDate, setExamDate] = useState(toDateInput(tomorrow()));
   const [focus, setFocus] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true); // fetching saved plan
   const [editing, setEditing] = useState(false); // regenerating over an existing plan
   const [error, setError] = useState(null);
+
+  // Reset dependent state the instant the selected course changes, so we never
+  // flash the previous course's plan or the "Generate plan" setup before this
+  // course's plan arrives. setState-during-render (React's reset-on-prop-change
+  // pattern) instead of an effect — no stale intermediate paint.
+  const [loadedCourseId, setLoadedCourseId] = useState(activeCourseId);
+  if (activeCourseId !== loadedCourseId) {
+    setLoadedCourseId(activeCourseId);
+    setPlan(null);
+    setInitialLoading(Boolean(activeCourseId));
+  }
 
   // load this course's saved plan (if any) whenever the course changes
   useEffect(() => {
@@ -64,6 +76,9 @@ function StudyPlan() {
       })
       .catch((err) => {
         if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setInitialLoading(false);
       });
 
     return () => {
@@ -127,6 +142,18 @@ function StudyPlan() {
         </h1>
         <p className="fade-up fade-up-2 mt-6 max-w-md text-cream/60">
           Choose a course from the rail to build a study plan from its material.
+        </p>
+      </main>
+    );
+  }
+
+  // ---- loading the saved plan (don't flash the setup screen) ----
+  if (initialLoading && !editing) {
+    return (
+      <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
+        <p className="font-display text-3xl text-red">( study plan )</p>
+        <p className="mt-5 animate-pulse text-cream/50">
+          Loading {activeCourse.name}…
         </p>
       </main>
     );

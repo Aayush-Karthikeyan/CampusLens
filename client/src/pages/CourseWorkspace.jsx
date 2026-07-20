@@ -12,6 +12,8 @@ import {
   uploadPdf,
 } from "../lib/api";
 
+const ACTIVE_COURSE_KEY = "campuslens:activeCourse";
+
 // Shared layout for the app tools (Chat / Quiz / Study Plan). Owns the course +
 // document rail so the three tools don't each re-implement it, and so switching
 // between them keeps the selected course (this component stays mounted across
@@ -21,8 +23,12 @@ function CourseWorkspace() {
   const [searchParams] = useSearchParams();
 
   const [courses, setCourses] = useState([]);
+  // The active course lives in state, not the URL — but the header nav links to
+  // /chat, /quiz, /study-plan without the ?course= param, so a refresh after
+  // switching tools would otherwise lose it. Seed from the deep-link param if
+  // present, else from the last course we persisted.
   const [activeCourseId, setActiveCourseId] = useState(
-    searchParams.get("course") || null
+    () => searchParams.get("course") || localStorage.getItem(ACTIVE_COURSE_KEY)
   );
   const [documents, setDocuments] = useState([]);
 
@@ -50,10 +56,23 @@ function CourseWorkspace() {
     [documents, activeCourseId]
   );
 
-  // load the course list once
+  // remember the active course across refreshes / tool switches
+  useEffect(() => {
+    if (activeCourseId) localStorage.setItem(ACTIVE_COURSE_KEY, activeCourseId);
+    else localStorage.removeItem(ACTIVE_COURSE_KEY);
+  }, [activeCourseId]);
+
+  // load the course list once, then reconcile: if the persisted/seeded course
+  // no longer exists (deleted elsewhere, stale bookmark), drop it so we don't
+  // fetch documents for a dead id or strand the UI on a phantom course.
   useEffect(() => {
     listCourses()
-      .then(setCourses)
+      .then((loaded) => {
+        setCourses(loaded);
+        setActiveCourseId((current) =>
+          current && loaded.some((c) => c._id === current) ? current : null
+        );
+      })
       .catch((err) => setRailError(err.message));
   }, []);
 

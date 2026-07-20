@@ -79,15 +79,19 @@ function Dashboard() {
 
         setCourses(loadedCourses);
 
-        const documentPairs = await Promise.all(
-          loadedCourses.map(async (course) => {
-            const docs = await listDocuments(course._id);
-            return [course._id, docs.length];
-          })
+        // allSettled, not all: one course whose document fetch fails shouldn't
+        // zero out every other course's count. Failed ones just default to 0.
+        const results = await Promise.allSettled(
+          loadedCourses.map((course) => listDocuments(course._id))
         );
 
         if (!cancelled) {
-          setDocumentCounts(Object.fromEntries(documentPairs));
+          const counts = {};
+          loadedCourses.forEach((course, i) => {
+            const r = results[i];
+            counts[course._id] = r.status === "fulfilled" ? r.value.length : 0;
+          });
+          setDocumentCounts(counts);
         }
       } catch (err) {
         if (!cancelled) setError(err.message);
