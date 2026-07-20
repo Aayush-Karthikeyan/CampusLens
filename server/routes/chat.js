@@ -66,9 +66,9 @@ function getWeakContextAnswer(matches) {
   if (list.length > 0 && bestScore >= MIN_CONTEXT_SCORE) return null;
 
   return [
-    "I don't see enough support for that in your uploaded notes yet.",
+    "Your notes are uploaded and searchable — but this question doesn't match any passage in them closely enough for me to answer honestly.",
     "",
-    "Try asking it with a phrase from the PDF, or upload the document that covers it. I can freestyle many things, but pretending your notes said something they did not is how study tools become decorative nonsense.",
+    "Try wording it with a phrase that appears in the PDF (a topic, a formula name, an example number). Broad questions like \"what's the trickiest concept?\" are on my to-learn list; for now I only answer what I can back with a citation, because pretending your notes said something they did not is how study tools become decorative nonsense.",
   ].join("\n");
 }
 
