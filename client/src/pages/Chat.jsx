@@ -23,6 +23,20 @@ function makeChatTitle(question) {
   return clean.length > 48 ? `${clean.slice(0, 45)}...` : clean || "New chat";
 }
 
+// Chunks stored before ingestion-side cleaning may still carry unmappable PDF
+// glyphs (math-font leftovers that render as boxes) — strip them at render
+// time so source receipts read as rough text instead of box soup. Built via
+// RegExp so the source stays ASCII-only.
+// eslint-disable-next-line no-control-regex -- stripping control chars is the point
+const UNMAPPABLE_GLYPHS = new RegExp("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F-\\u009F\\uE000-\\uF8FF\\uFFF0-\\uFFFD]", "g");
+
+function cleanExcerpt(text) {
+  return (text || "")
+    .replace(UNMAPPABLE_GLYPHS, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // one-click conversation starters for a fresh thread
 const STARTER_PROMPTS = [
   "Summarize the big ideas in my notes",
@@ -519,6 +533,9 @@ function AssistantMessage({ msg }) {
                       Source {openSource.number} · {openSource.source} · #
                       {openSource.chunkIndex}
                     </p>
+                    <span className="hidden shrink-0 text-xs text-cream/30 sm:block">
+                      raw excerpt — formatting may be rough
+                    </span>
                     <button
                       onClick={() => setOpenNumber(null)}
                       className="shrink-0 text-xs uppercase tracking-wide text-cream/40 transition-colors hover:text-cream"
@@ -527,7 +544,8 @@ function AssistantMessage({ msg }) {
                     </button>
                   </div>
                   <blockquote className="border-l-2 border-ice px-4 py-3 text-sm leading-relaxed text-cream/70">
-                    {openSource.text || "No preview available for this source."}
+                    {cleanExcerpt(openSource.text) ||
+                      "No preview available for this source."}
                   </blockquote>
                 </div>
               )}
