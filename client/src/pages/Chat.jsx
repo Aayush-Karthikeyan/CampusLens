@@ -30,11 +30,46 @@ function makeChatTitle(question) {
 // eslint-disable-next-line no-control-regex -- stripping control chars is the point
 const UNMAPPABLE_GLYPHS = new RegExp("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F-\\u009F\\uE000-\\uF8FF\\uFFF0-\\uFFFD]", "g");
 
+// scrambled equation runs (positioned PDF glyphs with no reading order) carry
+// no recoverable meaning — collapse long runs of tiny/numeric tokens
+function collapseEquationRuns(line, minRun = 8) {
+  const tokens = line.split(" ");
+  const out = [];
+  let run = [];
+
+  const isMathy = (t) => t.length <= 2 || /^[\d\W]+$/.test(t);
+
+  const flush = () => {
+    if (run.length >= minRun) {
+      if (out[out.length - 1] !== "[equation]") out.push("[equation]");
+    } else {
+      out.push(...run);
+    }
+    run = [];
+  };
+
+  for (const token of tokens) {
+    if (token && isMathy(token)) {
+      run.push(token);
+    } else {
+      flush();
+      if (token) out.push(token);
+    }
+  }
+  flush();
+
+  return out.join(" ");
+}
+
 function cleanExcerpt(text) {
-  return (text || "")
-    .replace(UNMAPPABLE_GLYPHS, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return collapseEquationRuns(
+    (text || "")
+      .replace(UNMAPPABLE_GLYPHS, " ")
+      .replace(/\s+/g, " ")
+      // fuse page markers into single tokens so the collapse can't eat them
+      .replace(/--\s*(\d+)\s+of\s+(\d+)\s*--/g, "[page:$1/$2]")
+      .trim()
+  );
 }
 
 // one-click conversation starters for a fresh thread
