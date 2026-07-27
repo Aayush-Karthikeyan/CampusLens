@@ -5,6 +5,7 @@ const { query } = require("../rag/query");
 const { buildPrompt, generateAnswerStream } = require("../rag/generate");
 const { normalizeGeminiError } = require("../lib/geminiError");
 const { normalizeDbError } = require("../lib/httpError");
+const { aiLimiter } = require("../lib/rateLimit");
 
 // Empirically measured on real course data: on-topic questions score ~0.63-0.70,
 // off-topic questions score ~0.45-0.49. 0.55 sits in the gap between them.
@@ -177,7 +178,7 @@ router.delete("/sessions/:id", async (req, res) => {
 // the sources + saved session. Errors before streaming starts are normal HTTP
 // errors; errors mid-stream become a {type:"error"} event because the 200
 // status has already been sent.
-router.post("/", async (req, res) => {
+router.post("/", aiLimiter, async (req, res) => {
   let session;
   let matches;
   let answerOverride = null;
@@ -186,6 +187,13 @@ router.post("/", async (req, res) => {
     const { courseId, question, sessionId } = req.body;
     if (!courseId || !question?.trim()) {
       return res.status(400).json({ error: "courseId and question are required" });
+    }
+    // guard the embedding call: a novel-length "question" just wastes quota and
+    // exceeds the embedding token limit anyway
+    if (question.length > 4000) {
+      return res
+        .status(400)
+        .json({ error: "That question is too long. Please shorten it." });
     }
 
     session = sessionId
@@ -234,6 +242,14 @@ router.post("/", async (req, res) => {
 
   const send = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`);
 
+  // If the client hangs up mid-answer (tab closed, navigated away), stop pulling
+  // from Gemini — otherwise we keep consuming the full generation and its quota
+  // into a dead socket. Fires on normal completion too, but only after res.end().
+  let clientGone = false;
+  res.on("close", () => {
+    clientGone = true;
+  });
+
   try {
     let answer = "";
     if (guardedAnswer) {
@@ -241,19 +257,25 @@ router.post("/", async (req, res) => {
       send({ type: "chunk", text: answer });
     } else {
       for await (const chunk of generateAnswerStream(prompt)) {
+        if (clientGone) break;
         answer += chunk;
         send({ type: "chunk", text: chunk });
       }
     }
 
+    // client left mid-stream — don't persist a partial answer or write to the
+    // closed socket
+    if (clientGone) return;
+
     await saveAnswer(session, question, answer, sources);
 
     send({ type: "done", answer, sources, session });
   } catch (error) {
+    if (clientGone) return; // error is just the closed socket; nothing to report
     const normalized = normalizeChatError(error);
     send({ type: "error", message: normalized.message });
   } finally {
-    res.end();
+    if (!clientGone) res.end();
   }
 });
 

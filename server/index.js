@@ -2,9 +2,14 @@ const express = require('express');
 const cors = require("cors");
 require("dotenv").config();
 const connectDB = require("./db");
+const { globalLimiter } = require("./lib/rateLimit");
 connectDB();
 
 const app = express();
+
+// Behind Render's reverse proxy the real client IP arrives in X-Forwarded-For;
+// trust the first hop so rate limiting keys on the visitor, not the proxy.
+app.set("trust proxy", 1);
 
 // In prod the client is served from a different origin (Vercel) than the API
 // (Render), so the browser needs the API to opt into cross-origin requests.
@@ -21,6 +26,10 @@ app.use(
 );
 
 app.use(express.json());
+
+// generous global cap on every route; the expensive AI routes add a tighter
+// per-route cap (see aiLimiter usage in each generation route)
+app.use(globalLimiter);
 
 const uploadRoute = require("./routes/upload");
 app.use("/upload", uploadRoute);

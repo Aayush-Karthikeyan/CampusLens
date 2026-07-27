@@ -99,12 +99,23 @@ async function generateQuiz(matches, count) {
     Math.min(BATCH_SIZE, count - i * BATCH_SIZE)
   );
 
-  const batches = await Promise.all(
+  // allSettled, not all: batches are independent Gemini calls, so one 429 or
+  // transient failure shouldn't discard the questions that already succeeded.
+  const results = await Promise.allSettled(
     sizes.map((size, i) =>
       slices[i].length > 0 ? generateBatch(slices[i], size) : []
     )
   );
-  const questions = batches.flat();
+  const questions = results.flatMap((r) =>
+    r.status === "fulfilled" ? r.value : []
+  );
+
+  // only surface an error if every batch failed (nothing to show the user);
+  // rethrow one real rejection so it flows through normalizeGeminiError (quota)
+  if (questions.length === 0) {
+    const firstRejection = results.find((r) => r.status === "rejected");
+    if (firstRejection) throw firstRejection.reason;
+  }
 
   return questions
     .filter(

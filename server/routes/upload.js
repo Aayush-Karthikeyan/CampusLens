@@ -5,6 +5,7 @@ const path = require("path");
 const router = express.Router();
 const { storePDF } = require("../rag/store");
 const Document = require("../models/Document");
+const { aiLimiter } = require("../lib/rateLimit");
 
 const MAX_UPLOAD_MB = Number(process.env.MAX_UPLOAD_MB || 15);
 
@@ -41,7 +42,7 @@ function acceptPdf(req, res, next) {
   });
 }
 
-router.post("/", acceptPdf, async (req, res) => {
+router.post("/", aiLimiter, acceptPdf, async (req, res) => {
   let document = null;
   try {
     if (!req.file) {

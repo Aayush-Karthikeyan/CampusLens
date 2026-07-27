@@ -5,6 +5,7 @@ const { query } = require("../rag/query");
 const { generateStudyPlan, PLAN_RETRIEVAL_SEED } = require("../rag/studyPlan");
 const { normalizeGeminiError } = require("../lib/geminiError");
 const { normalizeDbError } = require("../lib/httpError");
+const { aiLimiter } = require("../lib/rateLimit");
 
 const MAX_DAYS = 14;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -95,7 +96,7 @@ router.patch("/task", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", aiLimiter, async (req, res) => {
   try {
     const { courseId, focus } = req.body;
     if (!courseId) {
