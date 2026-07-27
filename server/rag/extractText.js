@@ -1,4 +1,4 @@
-const fs = require("fs");
+const fs = require("fs/promises");
 const { PDFParse } = require("pdf-parse");
 
 // PDF math fonts often extract as unmappable glyphs - private-use codepoints,
@@ -71,7 +71,7 @@ function cleanExtractedText(text) {
 }
 
 async function extractText(filePath) {
-  const dataBuffer = fs.readFileSync(filePath);
+  const dataBuffer = await fs.readFile(filePath);
   const parser = new PDFParse({ data: dataBuffer });
   const result = await parser.getText();
   return cleanExtractedText(result.text);

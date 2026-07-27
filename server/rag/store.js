@@ -2,9 +2,15 @@ require("dotenv").config();
 const { Pinecone } = require("@pinecone-database/pinecone");
 const { extractText } = require("./extractText");
 const { chunkText } = require("./chunkText");
-const { embedText } = require("./embed");
+const { embedTexts } = require("./embed");
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 const index = pc.index(process.env.PINECONE_INDEX);
+
+// Process chunks in slices: one batched embed call + one upsert per slice.
+// Keeps requests off the per-minute rate limit and each upsert under Pinecone's
+// ~2 MB request cap (a single upsert of a large PDF's vectors would exceed it).
+const BATCH_SIZE = 50;
+
 async function storePDF(filePath, courseId, sourceName, documentId = null) {
   const text = await extractText(filePath);
   const chunks = chunkText(text);
@@ -20,22 +26,23 @@ async function storePDF(filePath, courseId, sourceName, documentId = null) {
     throw err;
   }
 
-  const vectors = [];
-  for (let i = 0; i < chunks.length; i++) {
-    const embedding = await embedText(chunks[i]);
-    vectors.push({
-      id: `${filePath}-chunk-${i}`,
-      values: embedding,
+  for (let start = 0; start < chunks.length; start += BATCH_SIZE) {
+    const slice = chunks.slice(start, start + BATCH_SIZE);
+    const embeddings = await embedTexts(slice);
+    const records = slice.map((chunkTextValue, i) => ({
+      id: `${filePath}-chunk-${start + i}`,
+      values: embeddings[i],
       metadata: {
-        text: chunks[i],
+        text: chunkTextValue,
         courseId: courseId,
         ...(documentId ? { documentId: String(documentId) } : {}),
         source: sourceName,
-        chunkIndex: i,
+        chunkIndex: start + i,
       },
-    });
+    }));
+    await index.upsert({ records });
   }
-  await index.upsert({ records: vectors });
-  console.log(`Stored ${vectors.length} chunks for "${sourceName}"`);
+
+  console.log(`Stored ${chunks.length} chunks for "${sourceName}"`);
 }
 module.exports = { storePDF };
