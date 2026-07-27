@@ -36,6 +36,9 @@ function CourseWorkspace() {
   const [newCourseName, setNewCourseName] = useState("");
   const [uploading, setUploading] = useState(false);
   const [railError, setRailError] = useState(null);
+  // deployed on a free tier that cold-starts slowly — show a loading state
+  // instead of flashing "No courses yet." while the first request wakes the API
+  const [coursesLoading, setCoursesLoading] = useState(true);
 
   const fileInputRef = useRef(null);
   const { confirm, confirmDialog } = useConfirm();
@@ -73,7 +76,8 @@ function CourseWorkspace() {
           current && loaded.some((c) => c._id === current) ? current : null
         );
       })
-      .catch((err) => setRailError(err.message));
+      .catch((err) => setRailError(err.message))
+      .finally(() => setCoursesLoading(false));
   }, []);
 
   // load the active course's documents whenever it changes. No active course →
@@ -222,9 +226,13 @@ function CourseWorkspace() {
                 </li>
               );
             })}
-            {courses.length === 0 && !creating && (
-              <li className="text-sm text-cream/40">No courses yet.</li>
-            )}
+            {courses.length === 0 &&
+              !creating &&
+              (coursesLoading ? (
+                <li className="animate-pulse text-sm text-cream/40">Loading…</li>
+              ) : (
+                <li className="text-sm text-cream/40">No courses yet.</li>
+              ))}
           </ul>
 
           <Kicker as="h2" className="mt-10">
