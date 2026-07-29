@@ -1,4 +1,13 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { FiMenu, FiX } from "react-icons/fi";
+
+const NAV_LINKS = [
+  { to: "/chat", label: "Chat" },
+  { to: "/quiz", label: "Quiz" },
+  { to: "/study-plan", label: "Study Plan" },
+  { to: "/#faq", label: "FAQ" },
+];
 
 export function Logomark({ className }) {
   return (
@@ -67,53 +76,97 @@ export function SiteHeader({ drop = false, logoHidden = false, logoRef = null })
   const { pathname } = useLocation();
   const inApp = pathname !== "/";
   const onDashboard = pathname === "/dashboard";
+  // four spelled-out nav links don't fit beside the logo on a narrow screen —
+  // below `md` they collapse into a full-screen menu
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header
-      data-header
-      className={
-        (drop ? "header-drop " : "") +
-        "site-header fixed inset-x-0 top-0 z-40 mix-blend-difference"
-      }
-    >
-      <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-6 py-6 md:px-8 lg:px-10">
-        <nav className="flex items-center justify-start gap-16">
-          <FlipLink to="/chat" active={pathname === "/chat"}>
-            Chat
-          </FlipLink>
-          <FlipLink to="/quiz" active={pathname === "/quiz"}>
-            Quiz
-          </FlipLink>
-          <FlipLink to="/study-plan" active={pathname === "/study-plan"}>
-            Study Plan
-          </FlipLink>
-          <FlipLink to="/#faq">FAQ</FlipLink>
-        </nav>
+    <>
+      <header
+        data-header
+        className={
+          (drop ? "header-drop " : "") +
+          "site-header fixed inset-x-0 top-0 z-40 mix-blend-difference"
+        }
+      >
+        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-4 py-5 md:px-8 md:py-6 lg:px-10">
+          <nav className="hidden items-center justify-start md:flex md:gap-6 lg:gap-10 xl:gap-16">
+            {NAV_LINKS.map(({ to, label }) => (
+              <FlipLink key={to} to={to} active={pathname === to}>
+                {label}
+              </FlipLink>
+            ))}
+          </nav>
 
-        <Link
-          ref={logoRef}
-          to="/"
-          aria-label="CampusLens home"
-          className={"mx-8 text-ice" + (logoHidden ? " opacity-0" : "")}
-        >
-          <Logomark className="logo-spin h-12 w-12 md:h-14 md:w-14" />
-        </Link>
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="justify-self-start text-ice md:hidden"
+            aria-label="Open menu"
+          >
+            <FiMenu className="h-7 w-7" />
+          </button>
 
-        <Link
-          to="/dashboard"
-          aria-current={onDashboard ? "page" : undefined}
-          className={
-            "justify-self-end flex items-center gap-3 border border-ice px-5 py-2.5 text-base font-semibold uppercase tracking-wide transition-colors md:px-6 md:py-3 md:text-lg " +
-            (onDashboard
-              ? "bg-ice text-night"
-              : "text-ice hover:bg-ice hover:text-night")
-          }
-        >
-          <span>{inApp ? "Dashboard" : "Open app"}</span>
-          <ArrowGlyph className="h-4 w-4" />
-        </Link>
-      </div>
-    </header>
+          <Link
+            ref={logoRef}
+            to="/"
+            aria-label="CampusLens home"
+            className={"mx-2 text-ice md:mx-8" + (logoHidden ? " opacity-0" : "")}
+          >
+            <Logomark className="logo-spin h-10 w-10 md:h-14 md:w-14" />
+          </Link>
+
+          <Link
+            to="/dashboard"
+            aria-current={onDashboard ? "page" : undefined}
+            className={
+              "justify-self-end flex items-center gap-2 border border-ice px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors md:gap-3 md:px-6 md:py-3 md:text-lg " +
+              (onDashboard
+                ? "bg-ice text-night"
+                : "text-ice hover:bg-ice hover:text-night")
+            }
+          >
+            <span>{inApp ? "Dashboard" : "Open app"}</span>
+            <ArrowGlyph className="h-4 w-4" />
+          </Link>
+        </div>
+      </header>
+
+      {/* rendered outside the header so it escapes its mix-blend-difference */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-10 bg-night md:hidden">
+          <button
+            onClick={() => setMenuOpen(false)}
+            className="absolute right-5 top-5 text-cream/70 transition-colors hover:text-cream"
+            aria-label="Close menu"
+          >
+            <FiX className="h-7 w-7" />
+          </button>
+
+          {NAV_LINKS.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setMenuOpen(false)}
+              className={
+                "font-display text-4xl font-semibold uppercase tracking-tight transition-colors " +
+                (pathname === to ? "text-cream" : "text-ice")
+              }
+            >
+              {label}
+            </Link>
+          ))}
+
+          <Link
+            to="/dashboard"
+            onClick={() => setMenuOpen(false)}
+            className="mt-4 flex items-center gap-3 border border-ice px-6 py-3 text-base font-semibold uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night"
+          >
+            <span>Dashboard</span>
+            <ArrowGlyph className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
+    </>
   );
 }
 

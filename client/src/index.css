@@ -58,6 +58,9 @@
   display: inline-block;
   overflow: hidden;
   height: 1.4em;
+  /* the container is one line tall with overflow hidden, so a two-word label
+     that wraps ("Study Plan") loses its second word entirely */
+  white-space: nowrap;
 }
 
 .nav-link .nav-label {
@@ -444,7 +447,10 @@
 
 .footer-physics {
   cursor: grab;
-  touch-action: none;
+  /* pan-y, not none: the physics field covers the whole footer, so blocking all
+     touch gestures trapped mobile users — they could scroll in but never out.
+     Vertical scrolling now always belongs to the browser. */
+  touch-action: pan-y;
 }
 
 .footer-physics:active {

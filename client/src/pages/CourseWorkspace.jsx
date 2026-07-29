@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useSearchParams } from "react-router-dom";
+import { FiMenu, FiX } from "react-icons/fi";
 import { Logomark, SiteHeader } from "../components/SiteChrome";
 import { ActionButton, Field, Kicker } from "../components/ui";
 import { useConfirm } from "../lib/useConfirm";
@@ -39,6 +40,9 @@ function CourseWorkspace() {
   // deployed on a free tier that cold-starts slowly — show a loading state
   // instead of flashing "No courses yet." while the first request wakes the API
   const [coursesLoading, setCoursesLoading] = useState(true);
+  // the rail is a permanent column on desktop; on a phone it would cover most of
+  // the screen, so below `md` it becomes an off-canvas drawer
+  const [railOpen, setRailOpen] = useState(false);
 
   const fileInputRef = useRef(null);
   const { confirm, confirmDialog } = useConfirm();
@@ -175,9 +179,46 @@ function CourseWorkspace() {
       <SiteHeader />
       <div className="h-24 shrink-0" />
 
+      {/* mobile drawer handle — hidden once the drawer is open (backdrop and the
+          in-drawer close button take over from there) */}
+      {!railOpen && (
+        <button
+          onClick={() => setRailOpen(true)}
+          className="fixed left-4 top-[5.5rem] z-20 flex items-center gap-2 border border-cream/20 bg-night px-3 py-2 text-xs font-medium uppercase tracking-wide text-cream/70 transition-colors hover:border-ice hover:text-ice md:hidden"
+          aria-label="Open courses panel"
+        >
+          <FiMenu aria-hidden="true" />
+          <span>Courses</span>
+        </button>
+      )}
+
+      {railOpen && (
+        <div
+          onClick={() => setRailOpen(false)}
+          className="fixed inset-0 z-20 bg-night/80 md:hidden"
+          aria-hidden="true"
+        />
+      )}
+
       <div className="flex min-h-0 flex-1">
-        {/* shared course + document rail */}
-        <aside className="flex w-72 shrink-0 flex-col overflow-y-auto border-r border-cream/10 px-6 py-8">
+        {/* shared course + document rail — static column from `md` up, sliding
+            drawer below it (every `md:` class below restores the desktop value) */}
+        <aside
+          className={
+            "flex w-72 shrink-0 flex-col overflow-y-auto border-r border-cream/10 px-6 py-8 " +
+            "fixed inset-y-0 left-0 z-30 bg-night pt-24 transition-transform duration-300 " +
+            "md:static md:z-auto md:translate-x-0 md:bg-transparent md:pt-8 md:transition-none " +
+            (railOpen ? "translate-x-0" : "-translate-x-full")
+          }
+        >
+          <button
+            onClick={() => setRailOpen(false)}
+            className="absolute right-5 top-[6.5rem] text-cream/50 transition-colors hover:text-cream md:hidden"
+            aria-label="Close courses panel"
+          >
+            <FiX className="h-5 w-5" />
+          </button>
+
           <div className="flex items-center justify-between">
             <Kicker as="h2">Courses</Kicker>
             <button
@@ -206,7 +247,10 @@ function CourseWorkspace() {
               return (
                 <li key={course._id} className="group flex items-center gap-2">
                   <button
-                    onClick={() => setActiveCourseId(course._id)}
+                    onClick={() => {
+                      setActiveCourseId(course._id);
+                      setRailOpen(false); // mobile: picking a course closes the drawer
+                    }}
                     className={
                       "min-w-0 flex-1 border-l-2 py-1.5 pl-3 text-left text-sm transition-colors " +
                       (active

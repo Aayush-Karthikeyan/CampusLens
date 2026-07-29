@@ -76,6 +76,10 @@ function FooterLogoField() {
     if (!field) return undefined;
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Touch devices get the static layout: a drag-to-throw physics field that
+    // fills the screen competes with scrolling on a phone (and costs battery on
+    // a device that can least afford it). Same visual, no interaction.
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     let cleanupPhysics = () => {};
     let resizeTimer = 0;
 
@@ -258,7 +262,7 @@ function FooterLogoField() {
       };
     };
 
-    if (reduceMotion) {
+    if (reduceMotion || coarsePointer) {
       placeStaticTokens();
       window.addEventListener("resize", placeStaticTokens);
       return () => window.removeEventListener("resize", placeStaticTokens);
@@ -306,10 +310,10 @@ function FooterLogoField() {
 
 function InteractiveFooter() {
   return (
-    <footer className="footer-stage relative min-h-[110vh] overflow-hidden bg-black text-cream">
+    <footer className="footer-stage relative min-h-[75vh] overflow-hidden bg-black text-cream md:min-h-[110vh]">
       <FooterLogoField />
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-8 px-6 pb-8 md:px-10 md:pb-10">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-start gap-8 px-6 pb-8 md:flex-row md:items-end md:justify-between md:px-10 md:pb-10">
         <div className="pointer-events-auto flex flex-col items-start gap-6">
           <div className="flex items-center gap-3">
             {footerSocials.map(({ label, href, Icon }) => (
@@ -337,7 +341,7 @@ function InteractiveFooter() {
           </nav>
         </div>
 
-        <div className="pointer-events-auto flex flex-col items-end gap-5 text-right">
+        <div className="pointer-events-auto flex flex-col items-start gap-5 text-left md:items-end md:text-right">
           {legalLinks.map(({ label, href }) => (
             <FooterFlipLink
               key={label}

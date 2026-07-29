@@ -2,6 +2,10 @@
 
 **Ask your course notes anything — and get answers grounded in your own PDFs, with citations.**
 
+### [→ Try it live](https://campus-lens-teal.vercel.app)
+
+_Heads up: the first request can take up to a minute — the free-tier backend spins down when idle and needs a moment to wake up._
+
 CampusLens is a full-stack RAG (retrieval-augmented generation) study assistant. Upload your lecture slides and notes, and it becomes a tutor that only answers from *your* material: a grounded chat with source citations, auto-generated practice quizzes, and day-by-day study plans built from the actual content — not generic templates.
 
 <!-- Screenshots: drop images into a top-level `screenshots/` folder and uncomment.
