@@ -2,7 +2,41 @@ require("dotenv").config();
 const { GoogleGenAI } = require("@google/genai");
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-function buildPrompt(matches, question) {
+// How much hidden reasoning the model may spend before answering. 0 disables
+// thinking entirely (fastest first word, noticeably weaker multi-step math);
+// higher spends more tokens and a few more seconds for better derivations.
+// Env-tunable so it can be dialled from the host dashboard without a code change.
+const THINKING_BUDGET = Number(process.env.CHAT_THINKING_BUDGET ?? 1024);
+
+// Chat used to answer every message cold — no memory of the thread — so
+// follow-ups like "so no example 11?" or "explain that one" had nothing to
+// anchor to. Feed back a few recent turns, truncated so a long answer can't
+// crowd out the retrieved notes.
+const HISTORY_MESSAGES = 6;
+const HISTORY_CHAR_CAP = 700;
+
+function formatHistory(messages) {
+  const recent = (Array.isArray(messages) ? messages : [])
+    .slice(-HISTORY_MESSAGES)
+    .filter((message) => message?.text);
+
+  if (recent.length === 0) return "";
+
+  const lines = recent.map((message) => {
+    const who = message.role === "user" ? "Student" : "CampusLens";
+    const text =
+      message.text.length > HISTORY_CHAR_CAP
+        ? `${message.text.slice(0, HISTORY_CHAR_CAP)}…`
+        : message.text;
+    return `${who}: ${text}`;
+  });
+
+  return `\n\nConversation so far (oldest first). Use it to resolve follow-up references like "it", "that example", or "the second one" — but keep answering from the note excerpts, not from memory of your own previous wording:\n${lines.join(
+    "\n"
+  )}`;
+}
+
+function buildPrompt(matches, question, history = []) {
   const context = matches
     .map(
       (match, i) =>
@@ -32,7 +66,7 @@ Format every answer in clean Markdown:
 - If the user is just greeting you, answer briefly and invite a course question; do not invent a lesson.
 
 Context:
-${context}
+${context}${formatHistory(history)}
 
 Question: ${question}`;
 
@@ -55,10 +89,11 @@ async function* generateAnswerStream(prompt) {
     model: "gemini-2.5-flash",
     contents: prompt,
     config: {
-      // Thinking happens before any text is emitted, so with it on the stream
-      // stays blank for seconds. Chat answers are grounded in retrieved notes,
-      // so we trade hidden reasoning for near-instant first words.
-      thinkingConfig: { thinkingBudget: 0 },
+      // Thinking happens before any text is emitted, so the stream stays blank
+      // while the model reasons. That cost buys correct multi-step derivations,
+      // which is the whole job for course material — and the UI already covers
+      // the gap with a "reading your notes…" indicator.
+      thinkingConfig: { thinkingBudget: THINKING_BUDGET },
     },
   });
   for await (const chunk of response) {

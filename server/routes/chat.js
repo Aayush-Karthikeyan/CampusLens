@@ -214,10 +214,11 @@ router.post("/", aiLimiter, async (req, res) => {
     } else {
       broadMode = isBroadQuestion(question);
       // broad questions sample the course widely; specific ones search by the
-      // question itself
+      // question itself. 10 chunks (was 6) gives the model enough surrounding
+      // material to reason across, not just the single closest passage.
       matches = broadMode
-        ? await query(BROAD_RETRIEVAL_SEED, courseId, 8)
-        : await query(question, courseId);
+        ? await query(BROAD_RETRIEVAL_SEED, courseId, 10)
+        : await query(question, courseId, 10);
     }
   } catch (error) {
     const normalized = normalizeChatError(error);
@@ -230,7 +231,11 @@ router.post("/", aiLimiter, async (req, res) => {
   const guardedAnswer =
     answerOverride ||
     (broadMode && matches.length > 0 ? null : getWeakContextAnswer(matches));
-  const prompt = guardedAnswer ? null : buildPrompt(matches, question);
+  // session.messages holds the prior turns — this question is only appended
+  // after generation, so passing it straight through gives the model memory
+  const prompt = guardedAnswer
+    ? null
+    : buildPrompt(matches, question, session.messages);
   const sources = broadMode
     ? formatSources(matches.slice(0, 4), 0)
     : formatSources(matches);
