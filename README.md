@@ -5,7 +5,8 @@
 ### [→ Try it live](https://campus-lens-teal.vercel.app)
 
 **Demo login** — `demo@campuslens.app` / `campuslens-demo-2026`
-(or create your own account; a demo course with real lecture notes is already loaded)
+
+Comes preloaded with a course, an uploaded PDF, a chat with cited answers, and a generated study plan, so you can see every feature without uploading anything. Creating your own account works too — your courses stay private to you.
 
 _Heads up: the first request can take up to a minute — the free-tier backend spins down when idle and needs a moment to wake up._
 
