@@ -1,5 +1,6 @@
 require("dotenv").config();
 const { GoogleGenAI } = require("@google/genai");
+const { isTransientGeminiError } = require("../lib/geminiError");
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // How much hidden reasoning the model may spend before answering. 0 disables
@@ -14,6 +15,12 @@ const THINKING_BUDGET = Number(process.env.CHAT_THINKING_BUDGET ?? 1024);
 // crowd out the retrieved notes.
 const HISTORY_MESSAGES = 6;
 const HISTORY_CHAR_CAP = 700;
+const STREAM_ATTEMPTS = 2;
+const RETRY_DELAY_MS = 400;
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function formatHistory(messages) {
   const recent = (Array.isArray(messages) ? messages : [])
@@ -85,19 +92,38 @@ async function generateAnswer(prompt) {
 // can forward them to the browser immediately. Measured: a full tutor answer
 // takes about 8s to generate; streaming shows the first words in about 1s.
 async function* generateAnswerStream(prompt) {
-  const response = await ai.models.generateContentStream({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      // Thinking happens before any text is emitted, so the stream stays blank
-      // while the model reasons. That cost buys correct multi-step derivations,
-      // which is the whole job for course material — and the UI already covers
-      // the gap with a "reading your notes…" indicator.
-      thinkingConfig: { thinkingBudget: THINKING_BUDGET },
-    },
-  });
-  for await (const chunk of response) {
-    if (chunk.text) yield chunk.text;
+  for (let attempt = 1; attempt <= STREAM_ATTEMPTS; attempt += 1) {
+    let emittedText = false;
+
+    try {
+      const response = await ai.models.generateContentStream({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          // Thinking happens before any text is emitted, so the stream stays blank
+          // while the model reasons. That cost buys correct multi-step derivations,
+          // which is the whole job for course material — and the UI already covers
+          // the gap with a "reading your notes…" indicator.
+          thinkingConfig: { thinkingBudget: THINKING_BUDGET },
+        },
+      });
+      for await (const chunk of response) {
+        if (chunk.text) {
+          emittedText = true;
+          yield chunk.text;
+        }
+      }
+      return;
+    } catch (error) {
+      // Retrying after text reached the browser could duplicate an answer. Only
+      // retry a temporary outage that happened before the first visible chunk.
+      const canRetry =
+        !emittedText &&
+        attempt < STREAM_ATTEMPTS &&
+        isTransientGeminiError(error);
+      if (!canRetry) throw error;
+      await wait(RETRY_DELAY_MS);
+    }
   }
 }
 

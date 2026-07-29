@@ -32,27 +32,66 @@ function getRetryDelaySeconds(payload) {
   return Number.isFinite(seconds) ? seconds : null;
 }
 
+function getErrorStatus(error, payload = parseErrorPayload(error)) {
+  return (
+    payload?.error?.status ||
+    payload?.error?.code ||
+    error?.status ||
+    error?.statusCode ||
+    error?.code ||
+    error?.response?.status ||
+    ""
+  );
+}
+
+function isTransientGeminiError(error) {
+  const payload = parseErrorPayload(error);
+  const status = String(getErrorStatus(error, payload)).toUpperCase();
+  const message = String(payload?.error?.message || error?.message || "").toUpperCase();
+
+  return (
+    ["500", "502", "503", "504", "INTERNAL", "UNAVAILABLE", "DEADLINE_EXCEEDED"].includes(
+      status
+    ) ||
+    /\b(500|502|503|504)\b/.test(message) ||
+    message.includes("UNAVAILABLE") ||
+    message.includes("DEADLINE_EXCEEDED") ||
+    message.includes("SOCKET HANG UP") ||
+    message.includes("ECONNRESET") ||
+    message.includes("ETIMEDOUT")
+  );
+}
+
 function normalizeGeminiError(error, fallbackMessage) {
   const payload = parseErrorPayload(error);
-  const status = payload?.error?.status || "";
+  const status = String(getErrorStatus(error, payload));
   const message = payload?.error?.message || error.message || "";
   const quotaLike =
     status === "RESOURCE_EXHAUSTED" ||
+    status === "429" ||
     message.toLowerCase().includes("quota") ||
     message.includes("429");
 
-  if (!quotaLike) {
+  if (quotaLike) {
+    const retryDelay = formatRetryDelay(getRetryDelaySeconds(payload));
     return {
-      statusCode: 500,
-      message: fallbackMessage,
+      statusCode: 429,
+      message: `CampusLens has hit the AI request limit for now. Google says to try again ${retryDelay}. If it still does not work after that, the daily free quota may need longer to reset.`,
     };
   }
 
-  const retryDelay = formatRetryDelay(getRetryDelaySeconds(payload));
+  if (isTransientGeminiError(error)) {
+    return {
+      statusCode: 503,
+      message:
+        "CampusLens's AI service is temporarily unavailable. Please try again in a moment.",
+    };
+  }
+
   return {
-    statusCode: 429,
-    message: `CampusLens has hit the AI request limit for now. Google says to try again ${retryDelay}. If it still does not work after that, the daily free quota may need longer to reset.`,
+    statusCode: 500,
+    message: fallbackMessage,
   };
 }
 
-module.exports = { normalizeGeminiError };
+module.exports = { isTransientGeminiError, normalizeGeminiError };

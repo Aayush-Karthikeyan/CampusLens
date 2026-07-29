@@ -9,6 +9,7 @@ const { aiLimiter } = require("../lib/rateLimit");
 const { BROAD_RETRIEVAL_SEED, isBroadQuestion } = require("../rag/questionMode");
 const { requireAuth } = require("../lib/requireAuth");
 const { findOwnedCourse } = require("../lib/ownership");
+const { reportError } = require("../lib/monitoring");
 
 // Empirically measured on real course data: on-topic questions score ~0.63-0.70,
 // off-topic questions score ~0.45-0.49. 0.55 sits in the gap between them.
@@ -22,6 +23,13 @@ function normalizeChatError(error) {
     error,
     "CampusLens hit a problem answering that. Please try again."
   );
+}
+
+function reportUnexpectedChatError(error, normalized, phase) {
+  if (normalized.statusCode >= 500) {
+    // Never attach the question, request body, PDF text, cookies, or headers.
+    reportError(error, { route: "POST /chat", phase });
+  }
 }
 
 function makeTitle(question) {
@@ -244,6 +252,7 @@ router.post("/", aiLimiter, async (req, res) => {
     }
   } catch (error) {
     const normalized = normalizeChatError(error);
+    reportUnexpectedChatError(error, normalized, "retrieval");
     return res.status(normalized.statusCode).json({ error: normalized.message });
   }
 
@@ -300,6 +309,7 @@ router.post("/", aiLimiter, async (req, res) => {
   } catch (error) {
     if (clientGone) return; // error is just the closed socket; nothing to report
     const normalized = normalizeChatError(error);
+    reportUnexpectedChatError(error, normalized, "generation");
     send({ type: "error", message: normalized.message });
   } finally {
     if (!clientGone) res.end();
