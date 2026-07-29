@@ -77,4 +77,5 @@ async function extractText(filePath) {
   return cleanExtractedText(result.text);
 }
 
-module.exports = { extractText };
+// the two pure helpers are exported alongside so they can be tested directly
+module.exports = { extractText, cleanExtractedText, collapseEquationRuns };

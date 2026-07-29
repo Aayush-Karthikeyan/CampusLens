@@ -1,0 +1,52 @@
+name: CI
+
+# Gates every push and PR to main. Both halves of the repo are separate npm
+# projects, so each gets its own job — a broken server can't mask a broken
+# client and vice versa, and the two run in parallel.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  client:
+    name: Client (lint, test, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      # build last: catches anything that type-checks and lints but won't bundle
+      - run: npm run build
+
+  server:
+    name: Server (test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - run: npm ci
+      - run: npm test
+      # the API has no build step, so syntax-check the entrypoint instead
+      - run: node --check index.js

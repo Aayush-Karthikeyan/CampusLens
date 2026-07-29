@@ -6,6 +6,7 @@ const { buildPrompt, generateAnswerStream } = require("../rag/generate");
 const { normalizeGeminiError } = require("../lib/geminiError");
 const { normalizeDbError } = require("../lib/httpError");
 const { aiLimiter } = require("../lib/rateLimit");
+const { BROAD_RETRIEVAL_SEED, isBroadQuestion } = require("../rag/questionMode");
 
 // Empirically measured on real course data: on-topic questions score ~0.63-0.70,
 // off-topic questions score ~0.45-0.49. 0.55 sits in the gap between them.
@@ -72,20 +73,6 @@ function getWeakContextAnswer(matches) {
     "",
     "Try wording it with a phrase that appears in the PDF (a topic, a formula name, an example number). Or zoom out — ask me to \"summarize the big ideas\" and I'll sample across everything you've uploaded. I only answer what your notes can back up, because pretending they said something they did not is how study tools become decorative nonsense.",
   ].join("\n");
-}
-
-// Broad "big picture" questions (summarize, what's on the exam, trickiest
-// topic) don't embed near any single passage — similarity search starves and
-// the weak-context guard fires even though the notes are fine. Detect them and
-// retrieve with a broad seed instead, the same trick the quiz generator uses.
-const BROAD_RETRIEVAL_SEED =
-  "core concepts, key definitions, important formulas, worked examples, main topics, and exam-style material";
-
-function isBroadQuestion(question) {
-  const q = question.toLowerCase();
-  return /summar|overview|big idea|main idea|big picture|key (topic|concept|idea|point|takeaway)|main takeaway|what.*(cover|included|in (my|the|these) notes)|trickiest|hardest|most (difficult|important)|most likely.*(exam|test)|on the (exam|test)|what should i (study|focus|review|know)|study guide|explain.*concept/.test(
-    q
-  );
 }
 
 async function saveAnswer(session, question, answer, sources = []) {
