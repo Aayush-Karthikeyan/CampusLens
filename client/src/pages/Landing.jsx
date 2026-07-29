@@ -165,13 +165,13 @@ function Landing() {
       >
         <Link
           to="/dashboard"
-          className="corner-enter corner-enter-2 flex items-center gap-2 border border-ice px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night md:gap-3 md:px-6 md:py-3.5 md:text-xl"
+          className="corner-enter corner-enter-2 flex items-center gap-1.5 border border-ice px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night md:gap-3 md:px-6 md:py-3.5 md:text-xl"
         >
           <span>Start studying</span>
           <span className="mint-arrows" aria-hidden="true">
-            <ArrowGlyph className="mint-arrow h-4 w-4" />
-            <ArrowGlyph className="mint-arrow h-4 w-4" />
-            <ArrowGlyph className="mint-arrow h-4 w-4" />
+            <ArrowGlyph className="mint-arrow h-3 w-3 md:h-4 md:w-4" />
+            <ArrowGlyph className="mint-arrow h-3 w-3 md:h-4 md:w-4" />
+            <ArrowGlyph className="mint-arrow h-3 w-3 md:h-4 md:w-4" />
           </span>
         </Link>
       </div>

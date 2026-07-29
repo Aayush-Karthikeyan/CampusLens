@@ -61,7 +61,7 @@ function FlipLink({ to, active = false, children }) {
 
 function FlipSocial({ href, children }) {
   return (
-    <a href={href} className="nav-link font-display text-2xl font-bold text-ice xl:text-4xl">
+    <a href={href} className="nav-link font-display text-base font-bold text-ice md:text-4xl">
       <span className="nav-label">{children}</span>
       <span className="nav-label" aria-hidden="true">
         {children}
@@ -172,14 +172,13 @@ export function SiteHeader({ drop = false, logoHidden = false, logoRef = null })
 
 export function SocialBar({ enter = false }) {
   return (
-    // hidden on phones: side by side with the "Start studying" CTA these two
-    // need ~394px and collide on a 390px screen. The footer carries the same
-    // social links, so nothing is lost.
     <div
       data-corner
-      className="corner-track fixed left-0 bottom-4 z-40 hidden mix-blend-difference md:block md:bottom-5"
+      className="corner-track fixed left-0 bottom-4 z-40 mix-blend-difference md:bottom-5"
     >
-      <div className={(enter ? "corner-enter corner-enter-1 " : "") + "flex items-center gap-8 px-4 md:px-5"}>
+      {/* tight on phones so these sit beside the CTA without colliding;
+          md and up restores the original spacing exactly */}
+      <div className={(enter ? "corner-enter corner-enter-1 " : "") + "flex items-center gap-3 px-3 md:gap-8 md:px-5"}>
         <FlipSocial href="#">(LI)</FlipSocial>
         <FlipSocial href="#">(GH)</FlipSocial>
         <FlipSocial href="#">(IG)</FlipSocial>
