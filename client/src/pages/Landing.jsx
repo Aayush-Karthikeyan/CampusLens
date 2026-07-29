@@ -165,7 +165,7 @@ function Landing() {
       >
         <Link
           to="/dashboard"
-          className="corner-enter corner-enter-2 flex items-center gap-3 border border-ice px-5 py-3 text-lg font-semibold uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night md:px-6 md:py-3.5 md:text-xl"
+          className="corner-enter corner-enter-2 flex items-center gap-2 border border-ice px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night md:gap-3 md:px-6 md:py-3.5 md:text-xl"
         >
           <span>Start studying</span>
           <span className="mint-arrows" aria-hidden="true">
@@ -179,7 +179,7 @@ function Landing() {
       <div className="hero-stage" ref={stageRef}>
         <div className="hero-sticky">
           <div className="hero-photo-layer" aria-hidden="true" />
-          <div className="hero-content relative grid h-full w-full grid-cols-1 content-center items-center gap-10 px-10 md:grid-cols-[1fr_auto_1fr] md:gap-8 md:px-16 lg:px-24">
+          <div className="hero-content relative grid h-full w-full grid-cols-1 content-center items-center gap-10 px-6 md:grid-cols-[1fr_auto_1fr] md:gap-8 md:px-16 lg:px-24">
             <p className="hero-enter hero-enter-1 text-center text-base font-semibold leading-relaxed text-cream md:text-right md:text-xl lg:text-2xl">
               Notes
               <br />
@@ -188,7 +188,7 @@ function Landing() {
               Textbooks
             </p>
 
-            <h1 className="hero-enter hero-enter-2 hero-wordmark text-center font-display text-7xl font-semibold leading-none tracking-tight md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[11rem]">
+            <h1 className="hero-enter hero-enter-2 hero-wordmark text-center font-display text-5xl font-semibold leading-none tracking-tight sm:text-6xl md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[11rem]">
               <Link to="/" aria-label="campuslens">
                 <span className="sr-only">campuslens</span>
                 <span className="hero-wordmark-text" aria-hidden="true">
@@ -216,7 +216,7 @@ function Landing() {
 
           {features.map((feature, i) => (
             <div key={feature.tag} className="chapter text-night">
-              <div className="flex h-full flex-col justify-between px-10 pt-28 pb-28 md:px-16 md:pt-32 md:pb-32 lg:pt-36">
+              <div className="flex h-full flex-col justify-between px-6 pt-24 pb-24 md:px-16 md:pt-32 md:pb-32 lg:pt-36">
                 <div className="flex items-start justify-between">
                   <div>
                     {/* red pictogram slot — aperture mark stands in until the real set arrives */}
@@ -229,17 +229,19 @@ function Landing() {
                     <p className="mt-5 text-xs uppercase tracking-[0.2em] text-night">
                       What it does
                     </p>
-                    <p className="mt-3 font-display text-4xl md:text-5xl">( {feature.tag} )</p>
+                    <p className="mt-3 font-display text-3xl md:text-5xl">( {feature.tag} )</p>
                   </div>
-                  <span className="font-display text-8xl font-extrabold leading-none md:text-[11rem]">
+                  <span className="font-display text-6xl font-extrabold leading-none md:text-[11rem]">
                     0{i + 1}
                   </span>
                 </div>
-                <div className="flex items-end justify-between gap-10">
-                  <h3 className="max-w-xs font-display text-4xl font-extrabold leading-[0.98] tracking-tight md:max-w-[28vw] md:text-5xl lg:text-6xl">
+                {/* stacked on a phone: side-by-side squeezes the description to a
+                    ~28vw sliver and collides with the pinned photo panel */}
+                <div className="flex flex-col items-start gap-5 md:flex-row md:items-end md:justify-between md:gap-10">
+                  <h3 className="max-w-xs font-display text-3xl font-extrabold leading-[0.98] tracking-tight md:max-w-[28vw] md:text-5xl lg:text-6xl">
                     {feature.statement}
                   </h3>
-                  <p className="max-w-[28vw] text-lg leading-relaxed text-night/70 md:max-w-sm">
+                  <p className="text-base leading-relaxed text-night/70 md:max-w-sm md:text-lg">
                     {feature.desc}
                   </p>
                 </div>

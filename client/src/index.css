@@ -321,6 +321,21 @@
   opacity: clamp(0, calc(1 - 5 * var(--story-p, 0)), 1);
 }
 
+/* Phone adjustments to the scroll story. Desktop keeps the pinned photo panel
+   that the chapters wrap around; on a narrow screen that panel is only ~28vw
+   wide, so it becomes a band running straight through the chapter text. Here
+   it clips away to nothing instead, leaving the chapters a clean cream stage.
+   The story is also shortened — 700vh is seven screens of thumb-scrolling. */
+@media (max-width: 767px) {
+  .hero-stage {
+    height: 420vh;
+  }
+
+  .hero-photo-layer {
+    clip-path: inset(calc(var(--shrink) * 50%) calc(var(--shrink) * 50%));
+  }
+}
+
 /* chapter overlays: invisible until the scroll handler marks one active */
 .chapter {
   position: absolute;
