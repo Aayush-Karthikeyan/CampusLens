@@ -7,6 +7,8 @@ const { normalizeGeminiError } = require("../lib/geminiError");
 const { normalizeDbError } = require("../lib/httpError");
 const { aiLimiter } = require("../lib/rateLimit");
 const { BROAD_RETRIEVAL_SEED, isBroadQuestion } = require("../rag/questionMode");
+const { requireAuth } = require("../lib/requireAuth");
+const { findOwnedCourse } = require("../lib/ownership");
 
 // Empirically measured on real course data: on-topic questions score ~0.63-0.70,
 // off-topic questions score ~0.45-0.49. 0.55 sits in the gap between them.
@@ -87,11 +89,19 @@ async function saveAnswer(session, question, answer, sources = []) {
   return session;
 }
 
+// no chat route is reachable without a session
+router.use(requireAuth);
+
 router.get("/sessions", async (req, res) => {
   try {
     const { courseId } = req.query;
     if (!courseId) {
       return res.status(400).json({ error: "courseId is required" });
+    }
+
+    const course = await findOwnedCourse(courseId, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
     }
 
     const sessions = await ChatSession.find({ course: courseId }).sort({
@@ -109,6 +119,11 @@ router.post("/sessions", async (req, res) => {
     const { courseId, title } = req.body;
     if (!courseId) {
       return res.status(400).json({ error: "courseId is required" });
+    }
+
+    const course = await findOwnedCourse(courseId, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
     }
 
     const session = await ChatSession.create({
@@ -131,6 +146,12 @@ router.get("/sessions/:id", async (req, res) => {
       return res.status(404).json({ error: "Chat session not found" });
     }
 
+    // sessions have no owner of their own — scope flows through the course
+    const course = await findOwnedCourse(session.course, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Chat session not found" });
+    }
+
     res.json(session);
   } catch (error) {
     const { statusCode, message } = normalizeDbError(
@@ -143,12 +164,19 @@ router.get("/sessions/:id", async (req, res) => {
 
 router.delete("/sessions/:id", async (req, res) => {
   try {
-    const session = await ChatSession.findByIdAndDelete(req.params.id);
-
+    // look up before deleting — the previous version deleted first, which would
+    // now let anyone destroy another account's chat by guessing an id
+    const session = await ChatSession.findById(req.params.id);
     if (!session) {
       return res.status(404).json({ error: "Chat session not found" });
     }
 
+    const course = await findOwnedCourse(session.course, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Chat session not found" });
+    }
+
+    await ChatSession.findByIdAndDelete(req.params.id);
     res.json({ message: "Chat deleted" });
   } catch (error) {
     const { statusCode, message } = normalizeDbError(
@@ -181,6 +209,11 @@ router.post("/", aiLimiter, async (req, res) => {
       return res
         .status(400)
         .json({ error: "That question is too long. Please shorten it." });
+    }
+
+    const course = await findOwnedCourse(courseId, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
     }
 
     session = sessionId

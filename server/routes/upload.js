@@ -6,6 +6,8 @@ const router = express.Router();
 const { storePDF } = require("../rag/store");
 const Document = require("../models/Document");
 const { aiLimiter } = require("../lib/rateLimit");
+const { requireAuth } = require("../lib/requireAuth");
+const { findOwnedCourse } = require("../lib/ownership");
 
 const MAX_UPLOAD_MB = Number(process.env.MAX_UPLOAD_MB || 15);
 
@@ -42,7 +44,7 @@ function acceptPdf(req, res, next) {
   });
 }
 
-router.post("/", aiLimiter, acceptPdf, async (req, res) => {
+router.post("/", requireAuth, aiLimiter, acceptPdf, async (req, res) => {
   let document = null;
   try {
     if (!req.file) {
@@ -52,6 +54,13 @@ router.post("/", aiLimiter, acceptPdf, async (req, res) => {
     if (!courseId) {
       fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: "courseId is required" });
+    }
+
+    // don't let anyone push a PDF (and its embedding cost) into someone else's course
+    const course = await findOwnedCourse(courseId, req.user._id);
+    if (!course) {
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ error: "Course not found" });
     }
 
     const filePath = req.file.path;

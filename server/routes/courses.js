@@ -9,11 +9,16 @@ const {
   deleteDocumentVectors,
 } = require("../rag/deleteVectors");
 const { normalizeDbError } = require("../lib/httpError");
+const { requireAuth } = require("../lib/requireAuth");
+const { findOwnedCourse } = require("../lib/ownership");
 
 function fail(res, error, fallback) {
   const { statusCode, message } = normalizeDbError(error, fallback);
   res.status(statusCode).json({ error: message });
 }
+
+// nothing under /courses is reachable without a session
+router.use(requireAuth);
 
 router.post("/", async (req, res) => {
   try {
@@ -21,7 +26,7 @@ router.post("/", async (req, res) => {
     if (!name) {
       return res.status(400).json({ error: "Course name is required." });
     }
-    const course = await Course.create({ name });
+    const course = await Course.create({ name, owner: req.user._id });
     res.json(course);
   } catch (error) {
     fail(res, error, "Could not create the course.");
@@ -30,7 +35,9 @@ router.post("/", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const courses = await Course.find().sort({ createdAt: -1 });
+    const courses = await Course.find({ owner: req.user._id }).sort({
+      createdAt: -1,
+    });
     res.json(courses);
   } catch (error) {
     fail(res, error, "Could not load courses.");
@@ -39,6 +46,11 @@ router.get("/", async (req, res) => {
 
 router.get("/:id/documents", async (req, res) => {
   try {
+    const course = await findOwnedCourse(req.params.id, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
     const documents = await Document.find({ course: req.params.id }).sort({
       createdAt: -1,
     });
@@ -51,6 +63,12 @@ router.get("/:id/documents", async (req, res) => {
 router.delete("/:courseId/documents/:documentId", async (req, res) => {
   try {
     const { courseId, documentId } = req.params;
+
+    const course = await findOwnedCourse(courseId, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
     const document = await Document.findOne({ _id: documentId, course: courseId });
 
     if (!document) {
@@ -74,7 +92,7 @@ router.delete("/:courseId/documents/:documentId", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id);
+    const course = await findOwnedCourse(req.params.id, req.user._id);
 
     if (!course) {
       return res.status(404).json({ error: "Course not found" });

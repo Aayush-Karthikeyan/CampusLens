@@ -6,6 +6,8 @@ const { generateStudyPlan, PLAN_RETRIEVAL_SEED } = require("../rag/studyPlan");
 const { normalizeGeminiError } = require("../lib/geminiError");
 const { normalizeDbError } = require("../lib/httpError");
 const { aiLimiter } = require("../lib/rateLimit");
+const { requireAuth } = require("../lib/requireAuth");
+const { findOwnedCourse } = require("../lib/ownership");
 
 const MAX_DAYS = 14;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -44,11 +46,19 @@ function daysUntil(examDate) {
 }
 
 // Load the saved plan for a course (null if the student hasn't made one yet).
+// every study-plan route needs a session
+router.use(requireAuth);
+
 router.get("/", async (req, res) => {
   try {
     const { courseId } = req.query;
     if (!courseId) {
       return res.status(400).json({ error: "courseId is required" });
+    }
+
+    const course = await findOwnedCourse(courseId, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
     }
 
     const plan = await StudyPlan.findOne({ course: courseId });
@@ -71,6 +81,11 @@ router.patch("/task", async (req, res) => {
       return res
         .status(400)
         .json({ error: "courseId, day and taskIndex are required" });
+    }
+
+    const course = await findOwnedCourse(courseId, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
     }
 
     const plan = await StudyPlan.findOne({ course: courseId });
@@ -101,6 +116,11 @@ router.post("/", aiLimiter, async (req, res) => {
     const { courseId, focus } = req.body;
     if (!courseId) {
       return res.status(400).json({ error: "courseId is required" });
+    }
+
+    const course = await findOwnedCourse(courseId, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
     }
 
     const examDate = parseLocalDate(req.body.examDate);

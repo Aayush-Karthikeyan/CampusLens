@@ -4,15 +4,22 @@ const { query } = require("../rag/query");
 const { generateQuiz, QUIZ_RETRIEVAL_SEED } = require("../rag/quiz");
 const { normalizeGeminiError } = require("../lib/geminiError");
 const { aiLimiter } = require("../lib/rateLimit");
+const { requireAuth } = require("../lib/requireAuth");
+const { findOwnedCourse } = require("../lib/ownership");
 
 const MIN_QUESTIONS = 1;
 const MAX_QUESTIONS = 15;
 
-router.post("/", aiLimiter, async (req, res) => {
+router.post("/", requireAuth, aiLimiter, async (req, res) => {
   try {
     const { courseId } = req.body;
     if (!courseId) {
       return res.status(400).json({ error: "courseId is required" });
+    }
+
+    const course = await findOwnedCourse(courseId, req.user._id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
     }
 
     // clamp the requested count into a sane range
