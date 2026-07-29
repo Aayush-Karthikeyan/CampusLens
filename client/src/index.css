@@ -366,7 +366,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  /* Full width, no zoom — magnifying sliced text at the panel edges, which
+     reads as broken. The panel is ~450px wide and the source is 1206px, so the
+     screen is downscaled (i.e. sharp) and still legible. --shot-focus only
+     picks which vertical band survives the crop. */
+  object-position: var(--shot-focus, center 30%);
   opacity: 0;
   transition: opacity 450ms ease;
 }

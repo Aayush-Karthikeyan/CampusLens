@@ -22,6 +22,10 @@ const features = [
     tag: "chat",
     icon: chatIcon,
     shot: chatShot,
+    // Vertical framing for the pinned panel. The full phone screen is shown at
+    // native scale — zooming in sliced text at the edges, which reads as broken,
+    // while the whole screen stays legible at the panel's ~450px width.
+    shotFocus: "center 42%",
     shotAlt: "CampusLens chat, ready for a question about your course",
     statement: "Ask your notes anything.",
     desc: "Ask questions and get answers pulled straight from your uploaded course material — no rereading 400 slides to find one definition.",
@@ -30,6 +34,7 @@ const features = [
     tag: "cited",
     icon: citedIcon,
     shot: citedShot,
+    shotFocus: "center 60%", // keeps the answer and its SOURCES chips in frame
     shotAlt: "An answer with its source passages listed underneath",
     statement: "Every answer shows its receipts.",
     desc: "Each response points back to the exact page and passage it came from — open the source and check it yourself.",
@@ -38,6 +43,7 @@ const features = [
     tag: "quiz",
     icon: quizIcon,
     shot: quizShot,
+    shotFocus: "center 22%", // the cream results panel and first graded options
     shotAlt: "A graded practice quiz showing the score and correct answers",
     statement: "Test yourself before the exam does.",
     desc: "Turn any lecture or chapter into a set of practice questions in one click.",
@@ -46,6 +52,7 @@ const features = [
     tag: "plans",
     icon: plansIcon,
     shot: plansShot,
+    shotFocus: "center 18%", // the red countdown block and the first days
     shotAlt: "A day-by-day study plan with a countdown to the exam",
     statement: "A plan built from your course, not a template.",
     desc: "Tell it what to cover and when the exam is — get a study plan built around your actual documents.",
@@ -206,6 +213,7 @@ function Landing() {
                 src={feature.shot}
                 alt=""
                 className="chapter-shot"
+                style={{ "--shot-focus": feature.shotFocus }}
               />
             ))}
           </div>
