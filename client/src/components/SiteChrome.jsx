@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
 import { SOCIAL_LINKS } from "../lib/socialLinks";
+import { useAuth } from "../lib/useAuth";
 
 const NAV_LINKS = [
   { to: "/chat", label: "Chat" },
@@ -86,6 +87,7 @@ export function SiteHeader({ drop = false, logoHidden = false, logoRef = null })
   // four spelled-out nav links don't fit beside the logo on a narrow screen —
   // below `md` they collapse into a full-screen menu
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   return (
     <>
@@ -122,19 +124,36 @@ export function SiteHeader({ drop = false, logoHidden = false, logoRef = null })
             <Logomark className="logo-spin h-10 w-10 md:h-14 md:w-14" />
           </Link>
 
-          <Link
-            to="/dashboard"
-            aria-current={onDashboard ? "page" : undefined}
-            className={
-              "justify-self-end flex items-center gap-2 border border-ice px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors md:gap-3 md:px-6 md:py-3 md:text-lg " +
-              (onDashboard
-                ? "bg-ice text-night"
-                : "text-ice hover:bg-ice hover:text-night")
-            }
-          >
-            <span>{inApp ? "Dashboard" : "Open app"}</span>
-            <ArrowGlyph className="h-4 w-4" />
-          </Link>
+          <div className="flex items-center justify-end gap-3 justify-self-end md:gap-5">
+            {/* signed in: name + sign out sit beside the CTA on wider screens */}
+            {user && (
+              <div className="hidden items-center gap-3 lg:flex">
+                <span className="text-sm font-medium uppercase tracking-wide text-cream/70">
+                  {user.username}
+                </span>
+                <button
+                  onClick={signOut}
+                  className="text-sm uppercase tracking-wide text-cream/45 transition-colors hover:text-red"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+
+            <Link
+              to={user ? "/dashboard" : "/login"}
+              aria-current={onDashboard ? "page" : undefined}
+              className={
+                "flex items-center gap-2 border border-ice px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors md:gap-3 md:px-6 md:py-3 md:text-lg " +
+                (onDashboard
+                  ? "bg-ice text-night"
+                  : "text-ice hover:bg-ice hover:text-night")
+              }
+            >
+              <span>{user ? (inApp ? "Dashboard" : "Open app") : "Sign in"}</span>
+              <ArrowGlyph className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -164,13 +183,25 @@ export function SiteHeader({ drop = false, logoHidden = false, logoRef = null })
           ))}
 
           <Link
-            to="/dashboard"
+            to={user ? "/dashboard" : "/login"}
             onClick={() => setMenuOpen(false)}
             className="mt-4 flex items-center gap-3 border border-ice px-6 py-3 text-base font-semibold uppercase tracking-wide text-ice transition-colors hover:bg-ice hover:text-night"
           >
-            <span>Dashboard</span>
+            <span>{user ? "Dashboard" : "Sign in"}</span>
             <ArrowGlyph className="h-4 w-4" />
           </Link>
+
+          {user && (
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                signOut();
+              }}
+              className="text-sm uppercase tracking-wide text-cream/50 transition-colors hover:text-red"
+            >
+              Sign out ({user.username})
+            </button>
+          )}
         </div>
       )}
     </>

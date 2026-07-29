@@ -4,6 +4,9 @@
 
 ### [→ Try it live](https://campus-lens-teal.vercel.app)
 
+**Demo login** — `demo@campuslens.app` / `campuslens-demo-2026`
+(or create your own account; a demo course with real lecture notes is already loaded)
+
 _Heads up: the first request can take up to a minute — the free-tier backend spins down when idle and needs a moment to wake up._
 
 CampusLens is a full-stack RAG (retrieval-augmented generation) study assistant. Upload your lecture slides and notes, and it becomes a tutor that only answers from *your* material: a grounded chat with source citations, auto-generated practice quizzes, and day-by-day study plans built from the actual content — not generic templates.
@@ -24,6 +27,7 @@ _Screenshots coming soon._
 - **Practice quizzes** — generate multiple-choice questions from your material with explanations and a graded results view.
 - **Study plans** — give it your exam date and it builds a day-by-day plan mapped to your notes, with checkable tasks and a countdown.
 - **Course workspace** — organize PDFs by course; a dashboard tracks what you've uploaded.
+- **Accounts** — email/password sign-in with hashed passwords and httpOnly session cookies; every course, upload and chat is scoped to its owner.
 
 ## How it works
 

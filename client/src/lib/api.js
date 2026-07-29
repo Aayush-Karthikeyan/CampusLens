@@ -8,18 +8,58 @@
 //     straight there and the server's CORS allowlist lets them through.
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
+// Thrown for 401s so callers can tell "signed out" apart from a real failure.
+export class UnauthorizedError extends Error {
+  constructor(message) {
+    super(message || "Please sign in to continue.");
+    this.name = "UnauthorizedError";
+  }
+}
+
 async function request(path, options) {
-  const res = await fetch(`${API_BASE}${path}`, options);
+  // credentials: the auth cookie is httpOnly and cross-origin in production,
+  // so it only rides along if every request opts in
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "include",
+    ...options,
+  });
   let body = null;
   try {
     body = await res.json();
   } catch {
     // non-JSON response (shouldn't happen with this backend, but be safe)
   }
+  if (res.status === 401) {
+    throw new UnauthorizedError(body && body.error);
+  }
   if (!res.ok) {
     throw new Error((body && body.error) || res.statusText);
   }
   return body;
+}
+
+export function register(email, username, password) {
+  return request("/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, username, password }),
+  });
+}
+
+export function login(email, password) {
+  return request("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function logout() {
+  return request("/auth/logout", { method: "POST" });
+}
+
+export function getCurrentUser() {
+  return request("/auth/me");
 }
 
 export function listCourses() {
@@ -77,6 +117,8 @@ export function deleteChatSession(sessionId) {
 export async function sendChat(courseId, question, sessionId = null, onChunk) {
   const res = await fetch(`${API_BASE}/chat`, {
     method: "POST",
+    // this one bypasses request(), so it needs the cookie opt-in of its own
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ courseId, question, sessionId }),
   });
