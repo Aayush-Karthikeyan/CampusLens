@@ -42,8 +42,9 @@ function Privacy() {
         </p>
         <p>
           Uploaded PDF files are deleted from the server once their text has been
-          extracted. The extracted text is kept as numerical embeddings so your
-          questions can be matched against it.
+          extracted. The extracted text is divided into chunks and stored in
+          Pinecone alongside numerical embeddings so your questions can be
+          matched against the relevant passages.
         </p>
       </Section>
 
@@ -58,6 +59,12 @@ function Privacy() {
           Nothing is sold, and there is no advertising or third-party tracking.
           Anonymous page-view counts are collected through Vercel Analytics,
           which does not use cookies or identify individuals.
+        </p>
+        <p>
+          Unexpected backend errors and their stack traces are sent to Sentry so
+          failures can be diagnosed. Before an error is sent, CampusLens removes
+          request bodies, cookies, and headers; Sentry is not sent your PDF text,
+          questions, authentication cookie, or API credentials.
         </p>
       </Section>
 
