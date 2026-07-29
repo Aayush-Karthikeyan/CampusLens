@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
+import { SOCIAL_LINKS } from "../lib/socialLinks";
 
 const NAV_LINKS = [
   { to: "/chat", label: "Chat" },
@@ -59,9 +60,15 @@ function FlipLink({ to, active = false, children }) {
   );
 }
 
-function FlipSocial({ href, children }) {
+function FlipSocial({ href, label, children }) {
   return (
-    <a href={href} className="nav-link font-display text-base font-bold text-ice md:text-4xl">
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer noopener"
+      aria-label={label}
+      className="nav-link font-display text-base font-bold text-ice md:text-4xl"
+    >
       <span className="nav-label">{children}</span>
       <span className="nav-label" aria-hidden="true">
         {children}
@@ -179,9 +186,11 @@ export function SocialBar({ enter = false }) {
       {/* tight on phones so these sit beside the CTA without colliding;
           md and up restores the original spacing exactly */}
       <div className={(enter ? "corner-enter corner-enter-1 " : "") + "flex items-center gap-3 px-3 md:gap-8 md:px-5"}>
-        <FlipSocial href="#">(LI)</FlipSocial>
-        <FlipSocial href="#">(GH)</FlipSocial>
-        <FlipSocial href="#">(IG)</FlipSocial>
+        {SOCIAL_LINKS.map(({ key, short, label, href }) => (
+          <FlipSocial key={key} href={href} label={label}>
+            {short}
+          </FlipSocial>
+        ))}
       </div>
     </div>
   );

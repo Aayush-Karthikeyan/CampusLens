@@ -3,6 +3,7 @@ import Matter from "matter-js";
 import { FaGithub, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { Logomark } from "./SiteChrome";
+import { SOCIAL_LINKS } from "../lib/socialLinks";
 
 const footerLinks = [
   { label: "Chat", to: "/chat" },
@@ -11,11 +12,12 @@ const footerLinks = [
   { label: "FAQ", to: "/#faq" },
 ];
 
-const footerSocials = [
-  { label: "GitHub", href: "#", Icon: FaGithub },
-  { label: "LinkedIn", href: "#", Icon: FaLinkedinIn },
-  { label: "Instagram", href: "#", Icon: FaInstagram },
-];
+// icons for the shared SOCIAL_LINKS list, keyed so the two stay in sync
+const SOCIAL_ICONS = {
+  github: FaGithub,
+  linkedin: FaLinkedinIn,
+  instagram: FaInstagram,
+};
 
 const legalLinks = [
   { label: "Privacy Policy", href: "#" },
@@ -44,8 +46,16 @@ function FooterFlipLink({ to, href = "#", children, className = "", ariaLabel })
     );
   }
 
+  // real off-site links open in a new tab; the placeholder "#" ones must not
+  const external = href.startsWith("http");
+
   return (
-    <a href={href} className={linkClass} aria-label={ariaLabel}>
+    <a
+      href={href}
+      className={linkClass}
+      aria-label={ariaLabel}
+      {...(external ? { target: "_blank", rel: "noreferrer noopener" } : {})}
+    >
       {inner}
     </a>
   );
@@ -320,16 +330,19 @@ function InteractiveFooter() {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-start gap-8 px-6 pb-8 md:flex-row md:items-end md:justify-between md:px-10 md:pb-10">
         <div className="pointer-events-auto flex flex-col items-start gap-6">
           <div className="flex items-center gap-3">
-            {footerSocials.map(({ label, href, Icon }) => (
-              <FooterFlipLink
-                key={label}
-                href={href}
-                ariaLabel={label}
-                className="footer-icon-link text-cream"
-              >
-                <Icon aria-hidden="true" />
-              </FooterFlipLink>
-            ))}
+            {SOCIAL_LINKS.map(({ key, label, href }) => {
+              const Icon = SOCIAL_ICONS[key];
+              return (
+                <FooterFlipLink
+                  key={key}
+                  href={href}
+                  ariaLabel={label}
+                  className="footer-icon-link text-cream"
+                >
+                  <Icon aria-hidden="true" />
+                </FooterFlipLink>
+              );
+            })}
           </div>
 
           <nav className="flex flex-col items-start gap-4">
