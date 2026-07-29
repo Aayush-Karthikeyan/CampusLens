@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.2",
+    "@vercel/analytics": "^2.0.1",
     "katex": "^0.17.0",
     "matter-js": "^0.20.0",
     "react": "^19.2.7",

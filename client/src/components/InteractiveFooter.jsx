@@ -20,8 +20,8 @@ const SOCIAL_ICONS = {
 };
 
 const legalLinks = [
-  { label: "Privacy Policy", href: "#" },
-  { label: "Terms of Use", href: "#" },
+  { label: "Privacy Policy", to: "/privacy" },
+  { label: "Terms of Use", to: "/terms" },
 ];
 
 const footerTokenCount = 20;
@@ -359,10 +359,10 @@ function InteractiveFooter() {
         </div>
 
         <div className="pointer-events-auto flex flex-col items-start gap-5 text-left md:items-end md:text-right">
-          {legalLinks.map(({ label, href }) => (
+          {legalLinks.map(({ label, to }) => (
             <FooterFlipLink
               key={label}
-              href={href}
+              to={to}
               className="text-base font-medium text-cream md:text-2xl"
             >
               {label}

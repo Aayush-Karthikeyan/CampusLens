@@ -1,11 +1,13 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import ErrorBoundary from './components/ErrorBoundary'
 import AuthProvider from './components/AuthProvider'
 import RequireAuth from './components/RequireAuth'
 
 const Landing = lazy(() => import('./pages/Landing'))
 const Login = lazy(() => import('./pages/Login'))
+const Legal = lazy(() => import('./pages/Legal'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const CourseWorkspace = lazy(() => import('./pages/CourseWorkspace'))
 const Chat = lazy(() => import('./pages/Chat'))
@@ -21,6 +23,8 @@ function App() {
             {/* public: the landing page is the pitch, so it must not need a login */}
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/privacy" element={<Legal kind="privacy" />} />
+            <Route path="/terms" element={<Legal kind="terms" />} />
 
             {/* everything below owns user data and requires a session */}
             <Route
@@ -45,6 +49,8 @@ function App() {
             </Route>
           </Routes>
         </Suspense>
+        {/* anonymous page-view counts; no cookies, inert outside Vercel */}
+        <Analytics />
       </AuthProvider>
     </ErrorBoundary>
   )
