@@ -175,7 +175,10 @@ function CourseWorkspace() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-night text-cream">
+    // dvh, not vh: on iOS the URL bar and on-screen keyboard shrink the visible
+    // area but 100vh keeps its full-screen value, leaving the input bar stranded
+    // behind the keyboard with a dead gap. dvh tracks the real viewport.
+    <div className="flex h-dvh flex-col bg-night text-cream">
       <SiteHeader />
       <div className="h-24 shrink-0" />
 
@@ -211,13 +214,16 @@ function CourseWorkspace() {
             (railOpen ? "translate-x-0" : "-translate-x-full")
           }
         >
-          <button
-            onClick={() => setRailOpen(false)}
-            className="absolute right-5 top-[6.5rem] text-cream/50 transition-colors hover:text-cream md:hidden"
-            aria-label="Close courses panel"
-          >
-            <FiX className="h-5 w-5" />
-          </button>
+          {/* own row, not absolutely positioned — overlapping "+ New" otherwise */}
+          <div className="mb-4 flex justify-end md:hidden">
+            <button
+              onClick={() => setRailOpen(false)}
+              className="text-cream/50 transition-colors hover:text-cream"
+              aria-label="Close courses panel"
+            >
+              <FiX className="h-5 w-5" />
+            </button>
+          </div>
 
           <div className="flex items-center justify-between">
             <Kicker as="h2">Courses</Kicker>

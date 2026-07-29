@@ -336,6 +336,20 @@
   }
 }
 
+/* Short laptop windows: the chapter numeral and headline are sized for a tall
+   display. On a ~700px-high window the content outgrows its padded box, spills
+   past the bottom, and collides with the fixed social bar and CTA. Scale the two
+   biggest elements to the height actually available. Tall screens are untouched. */
+@media (min-width: 768px) and (max-height: 860px) {
+  .chapter-numeral {
+    font-size: 7rem;
+  }
+
+  .chapter-statement {
+    font-size: 2.5rem;
+  }
+}
+
 /* chapter overlays: invisible until the scroll handler marks one active */
 .chapter {
   position: absolute;

@@ -61,7 +61,7 @@ function FlipLink({ to, active = false, children }) {
 
 function FlipSocial({ href, children }) {
   return (
-    <a href={href} className="nav-link font-display text-3xl font-bold text-ice md:text-4xl">
+    <a href={href} className="nav-link font-display text-2xl font-bold text-ice xl:text-4xl">
       <span className="nav-label">{children}</span>
       <span className="nav-label" aria-hidden="true">
         {children}

@@ -99,7 +99,11 @@ function FooterLogoField() {
 
         const size = baseSize + seeded(index, 2) * (isMobile ? 20 : 70);
         const x = width * (0.08 + seeded(index, 4) * 0.84);
-        const y = height * (0.34 + seeded(index, 6) * 0.58);
+        // On a phone the links stack down the lower-left of the footer, so keep
+        // the tokens in the upper band instead of piling on top of them.
+        const y = isMobile
+          ? height * (0.08 + seeded(index, 6) * 0.34)
+          : height * (0.34 + seeded(index, 6) * 0.58);
         const angle = -0.9 + seeded(index, 8) * 1.8;
 
         el.style.display = "block";

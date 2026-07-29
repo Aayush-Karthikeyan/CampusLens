@@ -231,14 +231,14 @@ function Landing() {
                     </p>
                     <p className="mt-3 font-display text-3xl md:text-5xl">( {feature.tag} )</p>
                   </div>
-                  <span className="font-display text-6xl font-extrabold leading-none md:text-[11rem]">
+                  <span className="chapter-numeral font-display text-6xl font-extrabold leading-none md:text-[11rem]">
                     0{i + 1}
                   </span>
                 </div>
                 {/* stacked on a phone: side-by-side squeezes the description to a
                     ~28vw sliver and collides with the pinned photo panel */}
                 <div className="flex flex-col items-start gap-5 md:flex-row md:items-end md:justify-between md:gap-10">
-                  <h3 className="max-w-xs font-display text-3xl font-extrabold leading-[0.98] tracking-tight md:max-w-[28vw] md:text-5xl lg:text-6xl">
+                  <h3 className="chapter-statement max-w-xs font-display text-3xl font-extrabold leading-[0.98] tracking-tight md:max-w-[28vw] md:text-5xl lg:text-6xl">
                     {feature.statement}
                   </h3>
                   <p className="text-base leading-relaxed text-night/70 md:max-w-sm md:text-lg">
