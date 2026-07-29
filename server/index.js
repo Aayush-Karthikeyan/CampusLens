@@ -1,9 +1,18 @@
 const express = require('express');
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const connectDB = require("./db");
 const { globalLimiter } = require("./lib/rateLimit");
 connectDB();
+
+// Fail at boot rather than at the first login attempt: without a signing key
+// tokens can't be trusted, and a server that starts and then rejects everyone
+// is harder to diagnose than one that refuses to start.
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  console.error("JWT_SECRET is required in production. Refusing to start.");
+  process.exit(1);
+}
 
 const app = express();
 
@@ -22,14 +31,21 @@ app.use(
   cors({
     origin: allowedOrigins && allowedOrigins.length ? allowedOrigins : true,
     methods: ["GET", "POST", "PATCH", "DELETE"],
+    // the auth cookie only travels cross-origin if the server opts in here and
+    // the client sends credentials — miss either half and login silently fails
+    credentials: true,
   })
 );
 
 app.use(express.json());
+app.use(cookieParser());
 
 // generous global cap on every route; the expensive AI routes add a tighter
 // per-route cap (see aiLimiter usage in each generation route)
 app.use(globalLimiter);
+
+const authRoute = require("./routes/auth");
+app.use("/auth", authRoute);
 
 const uploadRoute = require("./routes/upload");
 app.use("/upload", uploadRoute);

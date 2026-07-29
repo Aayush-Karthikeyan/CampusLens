@@ -29,4 +29,18 @@ const aiLimiter = rateLimit({
   },
 });
 
-module.exports = { globalLimiter, aiLimiter };
+// Login and registration get their own tight cap. Without it an attacker can
+// grind passwords at whatever rate the network allows; bcrypt makes each guess
+// expensive for us too, so this protects the CPU as much as the accounts.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // only failed attempts count toward the cap
+  message: {
+    error: "Too many attempts. Please wait a few minutes and try again.",
+  },
+});
+
+module.exports = { globalLimiter, aiLimiter, authLimiter };
