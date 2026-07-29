@@ -12,29 +12,41 @@ import chatIcon from "../assets/feature-icons/chat_icon.svg";
 import citedIcon from "../assets/feature-icons/cited_icon.svg";
 import quizIcon from "../assets/feature-icons/quiz_icon.svg";
 import plansIcon from "../assets/feature-icons/plans_icon.svg";
+import chatShot from "../assets/chapters/01-chat.png";
+import citedShot from "../assets/chapters/02-cited.jpeg";
+import quizShot from "../assets/chapters/03-quiz.jpeg";
+import plansShot from "../assets/chapters/04-plans.png";
 
 const features = [
   {
     tag: "chat",
     icon: chatIcon,
+    shot: chatShot,
+    shotAlt: "CampusLens chat, ready for a question about your course",
     statement: "Ask your notes anything.",
     desc: "Ask questions and get answers pulled straight from your uploaded course material — no rereading 400 slides to find one definition.",
   },
   {
     tag: "cited",
     icon: citedIcon,
+    shot: citedShot,
+    shotAlt: "An answer with its source passages listed underneath",
     statement: "Every answer shows its receipts.",
     desc: "Each response points back to the exact page and passage it came from — open the source and check it yourself.",
   },
   {
     tag: "quiz",
     icon: quizIcon,
+    shot: quizShot,
+    shotAlt: "A graded practice quiz showing the score and correct answers",
     statement: "Test yourself before the exam does.",
     desc: "Turn any lecture or chapter into a set of practice questions in one click.",
   },
   {
     tag: "plans",
     icon: plansIcon,
+    shot: plansShot,
+    shotAlt: "A day-by-day study plan with a countdown to the exam",
     statement: "A plan built from your course, not a template.",
     desc: "Tell it what to cover and when the exam is — get a study plan built around your actual documents.",
   },
@@ -130,6 +142,10 @@ function Landing() {
         stage.querySelectorAll(".chapter").forEach((el, i) => {
           el.classList.toggle("chapter-active", i === idx);
         });
+        // the pinned panel swaps to the screenshot for whichever chapter is up
+        stage.querySelectorAll(".chapter-shot").forEach((el, i) => {
+          el.classList.toggle("chapter-shot-active", i === idx);
+        });
       });
     };
     onScroll();
@@ -179,6 +195,20 @@ function Landing() {
       <div className="hero-stage" ref={stageRef}>
         <div className="hero-sticky">
           <div className="hero-photo-layer" aria-hidden="true" />
+
+          {/* Product screenshots filling the pinned panel the photo shrinks into.
+              Sits above the photo but below the chapter text, which leaves the
+              middle band of each chapter free for it to show through. */}
+          <div className="chapter-shots" aria-hidden="true">
+            {features.map((feature) => (
+              <img
+                key={feature.tag}
+                src={feature.shot}
+                alt=""
+                className="chapter-shot"
+              />
+            ))}
+          </div>
           <div className="hero-content relative grid h-full w-full grid-cols-1 content-center items-center gap-10 px-6 md:grid-cols-[1fr_auto_1fr] md:gap-8 md:px-16 lg:px-24">
             <p className="hero-enter hero-enter-1 text-center text-base font-semibold leading-relaxed text-cream md:text-right md:text-xl lg:text-2xl">
               Notes
@@ -235,6 +265,14 @@ function Landing() {
                     0{i + 1}
                   </span>
                 </div>
+                {/* phones don't get the pinned panel (it clips away there), so the
+                    screenshot rides inline between the heading and the copy */}
+                <img
+                  src={feature.shot}
+                  alt={feature.shotAlt}
+                  className="mx-auto my-4 max-h-[34vh] w-auto border border-night/15 object-contain md:hidden"
+                />
+
                 {/* stacked on a phone: side-by-side squeezes the description to a
                     ~28vw sliver and collides with the pinned photo panel */}
                 <div className="flex flex-col items-start gap-5 md:flex-row md:items-end md:justify-between md:gap-10">

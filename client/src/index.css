@@ -350,6 +350,38 @@
   }
 }
 
+/* Screenshot panel: matches the geometry the hero photo clips down to
+   (inset 12% vertical / 36% horizontal), so each chapter's product shot lands
+   exactly in that pinned window. Only the active chapter's image is visible. */
+.chapter-shots {
+  position: absolute;
+  inset: 12% 36%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.chapter-shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0;
+  transition: opacity 450ms ease;
+}
+
+.chapter-shot-active {
+  opacity: 1;
+}
+
+/* phones show the shot inline inside each chapter instead */
+@media (max-width: 767px) {
+  .chapter-shots {
+    display: none;
+  }
+}
+
 /* chapter overlays: invisible until the scroll handler marks one active */
 .chapter {
   position: absolute;
@@ -753,6 +785,11 @@
     position: static;
     height: 100vh;
     clip-path: none;
+  }
+  /* no pinned panel in this mode, so the absolutely-placed shots have nothing
+     to sit inside — the chapters read as plain stacked sections instead */
+  .chapter-shots {
+    display: none;
   }
   .hero-content {
     opacity: 1;
