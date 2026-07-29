@@ -33,11 +33,17 @@ router.post("/", async (req, res) => {
   }
 });
 
+// Hard ceilings rather than paged UI: at real usage nobody has hundreds of
+// courses, but an unbounded query is how one runaway account degrades everyone.
+// This caps the blast radius without adding pagination the app doesn't need.
+const MAX_COURSES = 200;
+const MAX_DOCUMENTS = 200;
+
 router.get("/", async (req, res) => {
   try {
-    const courses = await Course.find({ owner: req.user._id }).sort({
-      createdAt: -1,
-    });
+    const courses = await Course.find({ owner: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(MAX_COURSES);
     res.json(courses);
   } catch (error) {
     fail(res, error, "Could not load courses.");
@@ -51,9 +57,9 @@ router.get("/:id/documents", async (req, res) => {
       return res.status(404).json({ error: "Course not found" });
     }
 
-    const documents = await Document.find({ course: req.params.id }).sort({
-      createdAt: -1,
-    });
+    const documents = await Document.find({ course: req.params.id })
+      .sort({ createdAt: -1 })
+      .limit(MAX_DOCUMENTS);
     res.json(documents);
   } catch (error) {
     fail(res, error, "Could not load documents.");

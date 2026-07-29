@@ -104,9 +104,11 @@ router.get("/sessions", async (req, res) => {
       return res.status(404).json({ error: "Course not found" });
     }
 
-    const sessions = await ChatSession.find({ course: courseId }).sort({
-      updatedAt: -1,
-    });
+    // capped for the same reason as the course list — bounded response size
+    // without paging a rail that realistically holds a handful of chats
+    const sessions = await ChatSession.find({ course: courseId })
+      .sort({ updatedAt: -1 })
+      .limit(100);
     res.json(sessions);
   } catch (error) {
     const normalized = normalizeChatError(error);

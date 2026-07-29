@@ -1,7 +1,9 @@
+require("dotenv").config();
+// must be required before the app so instrumentation is in place early
+const { errorHandler, reportError } = require("./lib/monitoring");
 const express = require('express');
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-require("dotenv").config();
 const connectDB = require("./db");
 const { globalLimiter } = require("./lib/rateLimit");
 connectDB();
@@ -66,6 +68,17 @@ app.use("/study-plan", studyPlanRoute);
 // doubles as the platform health check (Render pings this to confirm liveness)
 app.get('/', (req, res) => {
     res.send('CampusLens API is running');
+});
+
+// last middleware: anything a route throws without handling lands here, gets
+// reported, and returns a clean message instead of Express's HTML stack trace
+app.use(errorHandler);
+
+// A crash that takes the process down is the one you most want to know about,
+// so report it before letting the platform restart us.
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+  reportError(reason instanceof Error ? reason : new Error(String(reason)));
 });
 
 // hosts inject their own port via process.env.PORT; 3000 is the local default
