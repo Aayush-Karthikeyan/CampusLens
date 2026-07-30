@@ -14,7 +14,7 @@ CampusLens is a full-stack RAG (retrieval-augmented generation) study assistant.
 
 ## Demo
 
-### [▶ Watch the 84-second product demo](CampusLens-Final.mp4)
+### [▶ Watch the 84-second product demo on YouTube](https://youtu.be/Hph0J1Hb7Mc)
 
 The demo moves from the course dashboard into grounded chat, source citations, a generated quiz, and a day-by-day study plan.
 

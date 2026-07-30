@@ -4,3 +4,4 @@ node_modules/
 server/uploads/*
 !server/uploads/.gitkeep
 docs/CampusLens_Project_Guide.md
+CampusLens-Final.mp4
