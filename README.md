@@ -12,6 +12,12 @@ _Heads up: the first request can take up to a minute — the free-tier backend s
 
 CampusLens is a full-stack RAG (retrieval-augmented generation) study assistant. Upload your lecture slides and notes, and it becomes a tutor that only answers from *your* material: a grounded chat with source citations, auto-generated practice quizzes, and day-by-day study plans built from the actual content — not generic templates.
 
+## Demo
+
+### [▶ Watch the 84-second product demo](CampusLens-Final.mp4)
+
+The demo moves from the course dashboard into grounded chat, source citations, a generated quiz, and a day-by-day study plan.
+
 ## Screenshots
 
 ![Dashboard](screenshots/dashboard.png)
