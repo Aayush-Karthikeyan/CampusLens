@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { SiteHeader } from "../components/SiteChrome";
 import { ActionButton, Field, Kicker } from "../components/ui";
@@ -17,9 +17,21 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false);
 
   const isSignUp = mode === "signup";
   useDocumentTitle(isSignUp ? "Create account" : "Sign in");
+
+  // Signing in is often the first request to hit a cold backend, and "Signing
+  // in…" for forty silent seconds reads as a hang. Say what is actually
+  // happening once the wait stops looking normal.
+  // Cleared by handleSubmit rather than here, so this effect only ever schedules
+  // the timer — resetting state inside an effect body just cascades renders.
+  useEffect(() => {
+    if (!busy) return;
+    const timer = setTimeout(() => setSlow(true), 5000);
+    return () => clearTimeout(timer);
+  }, [busy]);
 
   // send people back where they were headed before the redirect
   const from = location.state?.from || "/dashboard";
@@ -28,6 +40,7 @@ function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
+    setSlow(false);
     setBusy(true);
     try {
       if (isSignUp) {
@@ -116,6 +129,13 @@ function Login() {
                 ? "Create account"
                 : "Sign in"}
           </ActionButton>
+
+          {slow && (
+            <p className="text-center text-xs leading-relaxed text-cream/45">
+              Still going — the free-tier server sleeps when idle and can take up
+              to a minute to wake. It is quick after this.
+            </p>
+          )}
         </form>
 
         <p className="mt-8 text-sm text-cream/50">

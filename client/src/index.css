@@ -493,6 +493,27 @@
   }
 }
 
+/* boot screen: indeterminate sweep while the free-tier backend wakes up. The
+   wait has no measurable progress to report, so the bar states "working" rather
+   than pretending to know how far along it is. */
+.boot-sweep::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  width: 35%;
+  background: var(--color-ice);
+  animation: boot-sweep 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes boot-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(285%);
+  }
+}
+
 /* chat "thinking" dots while waiting on the model */
 .thinking-dot {
   animation: mint-pulse 1.2s ease-in-out infinite;
@@ -818,6 +839,12 @@
   .thinking-dot {
     animation: none;
     opacity: 0.6;
+  }
+  /* no sweep, but the bar must still read as "busy" — fill it instead */
+  .boot-sweep::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.4;
   }
   .fade-up,
   .msg-enter,
