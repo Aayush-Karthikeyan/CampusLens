@@ -1,0 +1,34 @@
+name: Keep API awake
+
+# The API runs on a free Render instance, which spins down after ~15 minutes of
+# inactivity and then needs 30-60s to answer its next request. Anyone opening the
+# live link during that window waits out a cold start. Pinging the health route
+# keeps the instance up through the hours people actually look at it.
+#
+# Deliberately not 24/7: a free Render account gets 750 instance-hours a month
+# and a month is ~730 hours, so an always-awake service would eat the entire
+# allowance and starve every other free service on the account. This window is
+# ~15h/day (~450h/month), which leaves real headroom.
+#
+# Two known limits, both harmless: GitHub's scheduler is best-effort and runs can
+# drift by several minutes under load, and GitHub disables scheduled workflows
+# after 60 days without repository activity. Either way a missed ping costs one
+# slow request, not correctness.
+
+on:
+  schedule:
+    - cron: "*/10 3-17 * * *" # every 10 min, 03:00-17:59 UTC (08:30-23:30 IST)
+  workflow_dispatch: # manual wake-up before sharing the link
+
+jobs:
+  ping:
+    name: Ping the API
+    runs-on: ubuntu-latest
+    steps:
+      # --max-time is generous on purpose: a ping that lands on a sleeping
+      # instance IS the wake-up, so that request is the one that has to wait.
+      - name: Wake the backend
+        run: >
+          curl --silent --show-error --fail
+          --max-time 120 --retry 2 --retry-delay 20
+          https://campuslens-qpr8.onrender.com/
