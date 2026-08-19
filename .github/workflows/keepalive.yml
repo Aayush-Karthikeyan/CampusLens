@@ -1,35 +1,46 @@
 name: Keep API awake
 
 # The API runs on a free Render instance, which spins down after ~15 minutes of
-# inactivity and then needs 30-60s to answer its next request. Anyone opening the
-# live link during that window waits out a cold start. Pinging the health route
-# keeps the instance up through the hours people actually look at it.
+# inactivity and then needs 20-60s to answer its next request. Anyone opening the
+# live link during that window waits out a cold start.
 #
-# Deliberately not 24/7: a free Render account gets 750 instance-hours a month
-# and a month is ~730 hours, so an always-awake service would eat the entire
-# allowance and starve every other free service on the account. This window is
-# ~16h/day, which still leaves real headroom. The window is Mountain Time; cron
+# Why this loops instead of scheduling a frequent cron: GitHub throttles
+# high-frequency schedules hard. A "*/10" cron was measured actually firing every
+# 25-44 minutes, which left the instance asleep for a large part of every cycle.
+# A single hourly run that pings from the inside gets exact 5-minute spacing,
+# because the timing is ours rather than the scheduler's.
+#
+# Deliberately not 24/7: a free Render account gets 750 instance-hours a month and
+# a month is ~730 hours, so an always-awake service would eat the whole allowance
+# and starve every other free service on the account. This window is ~16h/day
+# (~480 hours), which still leaves headroom. The window tracks Mountain Time; cron
 # has no DST awareness, so it drifts an hour in winter, which is harmless.
 #
-# Two known limits, both harmless: GitHub's scheduler is best-effort and runs can
-# drift by several minutes under load, and GitHub disables scheduled workflows
-# after 60 days without repository activity. Either way a missed ping costs one
-# slow request, not correctness.
+# Actions minutes are free and unlimited on public repositories, so the idle
+# waiting inside the job costs nothing.
 
 on:
   schedule:
-    - cron: "*/10 14-23,0-5 * * *" # every 10 min, 14:00-05:59 UTC (08:00-23:59 Mountain)
+    - cron: "3 14-23,0-5 * * *" # hourly at :03, 14:00-05:59 UTC (08:00-23:59 Mountain)
   workflow_dispatch: # manual wake-up before sharing the link
+
+# A late-starting run must not stack on top of the previous hour's.
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
 
 jobs:
   ping:
-    name: Ping the API
+    name: Ping the API every 5 minutes for an hour
     runs-on: ubuntu-latest
+    timeout-minutes: 65
     steps:
-      # --max-time is generous on purpose: a ping that lands on a sleeping
-      # instance IS the wake-up, so that request is the one that has to wait.
-      - name: Wake the backend
-        run: >
-          curl --silent --show-error --fail
-          --max-time 120 --retry 2 --retry-delay 20
-          https://campuslens-qpr8.onrender.com/
+      - name: Keep the instance warm
+        run: |
+          URL=https://campuslens-qpr8.onrender.com/
+          for i in $(seq 1 12); do
+            # a ping landing on a sleeping instance IS the wake-up, so it waits
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 "$URL" || echo 000)
+            echo "ping $i/12 -> HTTP $code"
+            if [ "$i" -lt 12 ]; then sleep 300; fi
+          done
