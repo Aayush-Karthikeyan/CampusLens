@@ -75,7 +75,7 @@ Answers stream to the browser over Server-Sent Events, so text appears as the mo
 ### Setup
 
 ```bash
-git clone https://github.com/<your-username>/CampusLens.git
+git clone https://github.com/Aayush-Karthikeyan/CampusLens.git
 cd CampusLens
 
 # Backend
