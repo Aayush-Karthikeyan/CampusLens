@@ -74,18 +74,26 @@ Answers stream to the browser over Server-Sent Events, so text appears as the mo
 
 ### Setup
 
+### Setup
+
 ```bash
 git clone https://github.com/Aayush-Karthikeyan/CampusLens.git
 cd CampusLens
+```
 
-# Backend
+**Backend — terminal 1, from the repository root:**
+
+```bash
 cd server
 npm ci
 cp .env.example .env      # then fill in the values
 npm run dev               # http://localhost:3000
+```
 
-# Frontend (in a second terminal)
-cd ../client
+**Frontend — terminal 2, from the repository root:**
+
+```bash
+cd client
 npm ci
 npm run dev               # http://localhost:5173
 ```
