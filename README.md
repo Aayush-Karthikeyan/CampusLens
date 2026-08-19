@@ -57,9 +57,9 @@ The same retrieval layer powers quizzes and study plans, which retrieve broadly 
 
 ## Tech stack
 
-**Client** — React 19, Vite, Tailwind CSS v4, React Router 7
-**Server** — Node.js, Express 5, MongoDB (Mongoose)
-**AI / retrieval** — Google Gemini (embeddings + generation), Pinecone (vector store)
+- **Client** — React 19, Vite, Tailwind CSS v4, React Router 7
+- **Server** — Node.js, Express 5, MongoDB (Mongoose)
+- **AI / retrieval** — Google Gemini (embeddings + generation), Pinecone (vector store)
 
 Answers stream to the browser over Server-Sent Events, so text appears as the model produces it.
 
@@ -67,7 +67,7 @@ Answers stream to the browser over Server-Sent Events, so text appears as the mo
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20.19+
 - A MongoDB database (e.g. a free MongoDB Atlas cluster)
 - A Pinecone index
 - A Google Gemini API key
@@ -80,13 +80,13 @@ cd CampusLens
 
 # Backend
 cd server
-npm install
+npm ci
 cp .env.example .env      # then fill in the values
 npm run dev               # http://localhost:3000
 
 # Frontend (in a second terminal)
-cd client
-npm install
+cd ../client
+npm ci
 npm run dev               # http://localhost:5173
 ```
 
