@@ -18,8 +18,12 @@ function tomorrow() {
   return d;
 }
 
+// Plan dates are calendar days, stored as UTC midnight. Rendering them in the
+// viewer's timezone made every date land on the previous day for anyone behind
+// UTC — a plan generated today opened on "yesterday", already looking missed.
 function formatDay(dateish) {
   return new Date(dateish).toLocaleDateString(undefined, {
+    timeZone: "UTC",
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -28,9 +32,15 @@ function formatDay(dateish) {
 
 function daysUntil(dateish) {
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // compare bare calendar dates: the viewer's local today against the exam's
+  // stored UTC day. Reading the stored day with local getters lost a day.
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const exam = new Date(dateish);
-  const examDay = new Date(exam.getFullYear(), exam.getMonth(), exam.getDate());
+  const examDay = Date.UTC(
+    exam.getUTCFullYear(),
+    exam.getUTCMonth(),
+    exam.getUTCDate()
+  );
   return Math.round((examDay - today) / (24 * 60 * 60 * 1000));
 }
 
@@ -71,7 +81,10 @@ function StudyPlan() {
         setPlan(saved);
         setEditing(false);
         setError(null);
-        if (saved?.examDate) setExamDate(toDateInput(new Date(saved.examDate)));
+        // the stored value is already a yyyy-mm-dd calendar day at UTC midnight,
+        // so take its date part directly — round-tripping it through a local
+        // Date would move it back a day west of UTC
+        if (saved?.examDate) setExamDate(String(saved.examDate).slice(0, 10));
         if (saved?.focus) setFocus(saved.focus);
       })
       .catch((err) => {
