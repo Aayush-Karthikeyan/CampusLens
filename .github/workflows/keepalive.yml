@@ -8,7 +8,8 @@ name: Keep API awake
 # Deliberately not 24/7: a free Render account gets 750 instance-hours a month
 # and a month is ~730 hours, so an always-awake service would eat the entire
 # allowance and starve every other free service on the account. This window is
-# ~15h/day (~450h/month), which leaves real headroom.
+# ~16h/day, which still leaves real headroom. The window is Mountain Time; cron
+# has no DST awareness, so it drifts an hour in winter, which is harmless.
 #
 # Two known limits, both harmless: GitHub's scheduler is best-effort and runs can
 # drift by several minutes under load, and GitHub disables scheduled workflows
@@ -17,7 +18,7 @@ name: Keep API awake
 
 on:
   schedule:
-    - cron: "*/10 3-17 * * *" # every 10 min, 03:00-17:59 UTC (08:30-23:30 IST)
+    - cron: "*/10 14-23,0-5 * * *" # every 10 min, 14:00-05:59 UTC (08:00-23:59 Mountain)
   workflow_dispatch: # manual wake-up before sharing the link
 
 jobs:
