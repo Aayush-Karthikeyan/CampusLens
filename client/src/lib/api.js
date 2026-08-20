@@ -1,11 +1,11 @@
 // First data layer for CampusLens. Paths are written without an /api prefix and
-// resolved against API_BASE:
-//   - dev: API_BASE defaults to "/api", so calls hit the Vite dev proxy
-//     (/api/* → http://localhost:3000/*, see vite.config.js) and stay
-//     same-origin — no CORS needed locally.
-//   - prod: set VITE_API_URL to the deployed backend origin
-//     (e.g. https://campuslens-api.onrender.com) at build time; calls go
-//     straight there and the server's CORS allowlist lets them through.
+// resolved against API_BASE, which is "/api" everywhere: dev proxies it via
+// Vite (/api/* → http://localhost:3000/*, see vite.config.js) and prod proxies
+// it via a Vercel rewrite to Render (see vercel.json). Both keep requests
+// same-origin, which keeps the auth cookie first-party — pointing straight at
+// the Render origin instead makes it a third-party cookie that mobile
+// Safari/WebKit silently drops, looping every phone back to the login page.
+// VITE_API_URL survives only as an escape hatch to bypass the proxy.
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 // Thrown for 401s so callers can tell "signed out" apart from a real failure.
@@ -17,8 +17,9 @@ export class UnauthorizedError extends Error {
 }
 
 async function request(path, options) {
-  // credentials: the auth cookie is httpOnly and cross-origin in production,
-  // so it only rides along if every request opts in
+  // credentials: "include" is belt-and-braces — requests are same-origin via
+  // the /api proxy, but the opt-in keeps auth working even through an
+  // absolute VITE_API_URL override
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
     ...options,

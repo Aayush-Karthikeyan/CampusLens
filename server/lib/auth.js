@@ -53,14 +53,16 @@ function readToken(token) {
 }
 
 // The token rides in an httpOnly cookie rather than localStorage: script on the
-// page cannot read it, so an XSS bug can't walk off with the session. In
-// production the client (Vercel) and API (Render) are different origins, which
-// requires SameSite=None, and browsers only accept that alongside Secure.
+// page cannot read it, so an XSS bug can't walk off with the session. In every
+// environment the cookie is first-party — dev proxies /api through Vite, and
+// production proxies it through a Vercel rewrite to Render (client/vercel.json)
+// because mobile Safari/WebKit drops cross-site cookies no matter what SameSite
+// says. First-party means Lax works everywhere and blocks cross-site POSTs.
 function cookieOptions() {
   return {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: "lax",
     maxAge: SEVEN_DAYS_MS,
     path: "/",
   };
