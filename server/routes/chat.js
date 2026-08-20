@@ -7,6 +7,7 @@ const { normalizeGeminiError } = require("../lib/geminiError");
 const { normalizeDbError } = require("../lib/httpError");
 const { aiLimiter } = require("../lib/rateLimit");
 const { BROAD_RETRIEVAL_SEED, isBroadQuestion } = require("../rag/questionMode");
+const { getLocalAnswer } = require("../lib/localAnswer");
 const { requireAuth } = require("../lib/requireAuth");
 const { findOwnedCourse } = require("../lib/ownership");
 const { reportError } = require("../lib/monitoring");
@@ -48,29 +49,6 @@ function formatSources(matches, minScore = SOURCE_SCORE_THRESHOLD) {
       text: match.metadata.text,
       score: match.score,
     }));
-}
-
-function getLocalAnswer(question) {
-  const clean = question.trim().toLowerCase().replace(/[^\w\s']/g, "");
-  const compact = clean.replace(/\s+/g, " ");
-
-  if (
-    /^(hi|hey|hello|yo|sup|wassup|what's up|whats up|good morning|good afternoon|good evening)$/.test(
-      compact
-    )
-  ) {
-    return "Hey, I'm here. Pick a PDF-shaped problem and let's make it less rude.";
-  }
-
-  if (/^(thanks|thank you|thx|ty|appreciate it|thanks bro|thanks man)$/.test(compact)) {
-    return "Anytime. Academic suffering loves company, apparently.";
-  }
-
-  if (/^(bye|goodbye|see you|cya|later)$/.test(compact)) {
-    return "Later. May your notes be searchable and your professors unusually merciful.";
-  }
-
-  return null;
 }
 
 function getWeakContextAnswer(matches) {
