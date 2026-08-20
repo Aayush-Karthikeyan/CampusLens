@@ -93,12 +93,82 @@ function FooterLogoField() {
     let cleanupPhysics = () => {};
     let resizeTimer = 0;
 
+    // Below md the static layout is a honeycomb, not a scatter: random
+    // placement has no collision resolution, and on a ~375px screen eight
+    // 84-104px tokens cannot avoid overlapping — which reads as a physics
+    // pile frozen mid-crash, not a design. The link stack is bottom-anchored
+    // and ~340px tall, so the honeycomb gets whatever band is left above it:
+    // three rows on tall screens, two on typical phones, one on small ones,
+    // none in landscape (where the links already need the whole footer).
+    const HONEYCOMB_LAYOUTS = [
+      { rows: [2, 3, 2], minSize: 54 },
+      { rows: [2, 3], minSize: 48 },
+      { rows: [3], minSize: 40 },
+    ];
+    // vertical row pitch as a fraction of token size: 1.08 gap * sqrt(3)/2
+    const ROW_PITCH = 0.94;
+
+    const hideTokensFrom = (start) => {
+      for (let index = start; index < tokenRefs.current.length; index += 1) {
+        const el = tokenRefs.current[index];
+        if (el) el.style.display = "none";
+      }
+    };
+
+    const placeHoneycombTokens = () => {
+      const width = field.clientWidth;
+      // the links div is the field's next sibling inside the footer;
+      // everything above its top edge is free space the honeycomb may use
+      const links = field.nextElementSibling;
+      const linksTop = links
+        ? links.getBoundingClientRect().top - field.getBoundingClientRect().top
+        : field.clientHeight * 0.55;
+      const band = linksTop - 28; // 16px top margin + 12px gap above the links
+
+      const rowSpan = (rowCount) => 1 + (rowCount - 1) * ROW_PITCH;
+      const layout = HONEYCOMB_LAYOUTS.find(
+        ({ rows, minSize }) => band / rowSpan(rows.length) >= minSize
+      );
+      if (!layout) {
+        hideTokensFrom(0);
+        return;
+      }
+
+      const { rows } = layout;
+      const size = Math.min(width * 0.21, 92, band / rowSpan(rows.length));
+      const pitchX = size * 1.08;
+      const pitchY = size * ROW_PITCH;
+      const centerY = 16 + band / 2; // cluster centered in the free band
+
+      let index = 0;
+      rows.forEach((rowCount, rowIndex) => {
+        const y = centerY + (rowIndex - (rows.length - 1) / 2) * pitchY;
+        for (let col = 0; col < rowCount; col += 1) {
+          const el = tokenRefs.current[index];
+          index += 1;
+          if (!el) continue;
+
+          const x = width / 2 + (col - (rowCount - 1) / 2) * pitchX;
+          el.style.display = "block";
+          el.style.width = `${size}px`;
+          el.style.height = `${size}px`;
+          el.style.setProperty("--token-size", `${size}px`);
+          el.style.transform = `translate3d(${x - size / 2}px, ${y - size / 2}px, 0)`;
+        }
+      });
+
+      hideTokensFrom(index);
+    };
+
     const placeStaticTokens = () => {
       const width = field.clientWidth;
+      if (width < 768) {
+        placeHoneycombTokens();
+        return;
+      }
+
       const height = field.clientHeight;
-      const isMobile = width < 768;
-      const count = isMobile ? 8 : 14;
-      const baseSize = isMobile ? 84 : 145;
+      const count = 14;
 
       tokenRefs.current.forEach((el, index) => {
         if (!el) return;
@@ -107,13 +177,9 @@ function FooterLogoField() {
           return;
         }
 
-        const size = baseSize + seeded(index, 2) * (isMobile ? 20 : 70);
+        const size = 145 + seeded(index, 2) * 70;
         const x = width * (0.08 + seeded(index, 4) * 0.84);
-        // On a phone the links stack down the lower-left of the footer, so keep
-        // the tokens in the upper band instead of piling on top of them.
-        const y = isMobile
-          ? height * (0.08 + seeded(index, 6) * 0.34)
-          : height * (0.34 + seeded(index, 6) * 0.58);
+        const y = height * (0.34 + seeded(index, 6) * 0.58);
         const angle = -0.9 + seeded(index, 8) * 1.8;
 
         el.style.display = "block";
@@ -277,9 +343,21 @@ function FooterLogoField() {
     };
 
     if (reduceMotion || coarsePointer) {
+      let lastStaticWidth = field.clientWidth;
       placeStaticTokens();
-      window.addEventListener("resize", placeStaticTokens);
-      return () => window.removeEventListener("resize", placeStaticTokens);
+
+      const onStaticResize = () => {
+        const width = field.clientWidth;
+        // iOS fires resize when the URL bar collapses mid-scroll — a
+        // height-only change; re-laying out on it makes the tokens teleport
+        // under the reader's thumb
+        if (width < 768 && width === lastStaticWidth) return;
+        lastStaticWidth = width;
+        placeStaticTokens();
+      };
+
+      window.addEventListener("resize", onStaticResize);
+      return () => window.removeEventListener("resize", onStaticResize);
     }
 
     cleanupPhysics = setupPhysics();
